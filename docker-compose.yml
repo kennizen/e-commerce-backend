@@ -1,0 +1,28 @@
+services:
+  postgres:
+    container_name: postgres_e_commerce_db
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - ${POSTGRES_PORT}:5432
+    volumes:
+      - "e-commerce-postgres-data:/var/lib/postgresql/data"
+
+  api-e-commerce:
+    container_name: e-commerce-backend
+    build:
+      dockerfile: Dockerfile
+      context: ./
+    ports:
+      - 5000:80
+    depends_on:
+      - postgres
+    environment:
+      - API_PORT=5000
+    volumes:
+      - ./:/app
+
+volumes:
+  e-commerce-postgres-data: {}
