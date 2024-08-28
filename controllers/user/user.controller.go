@@ -24,5 +24,5 @@ func RegisterController(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("user", user)
 
-	user.RegisterUserService()
+	user.RegisterUserService(w)
 }
