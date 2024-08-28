@@ -16,10 +16,10 @@ func main() {
 	routes.RegisterRoutes(router)
 
 	server := http.Server{
-		Addr:    ":" + os.Getenv("API_PORT"),
+		Addr:    ":" + os.Getenv("SERVER_PORT"),
 		Handler: router,
 	}
 
-	fmt.Println("🚀🚀🚀 Server started on port", os.Getenv("API_PORT"))
+	fmt.Println("🚀🚀🚀 Server started on port", os.Getenv("SERVER_PORT"))
 	log.Fatal(server.ListenAndServe())
 }

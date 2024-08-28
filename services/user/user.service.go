@@ -4,8 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-
-	"github.com/kennizen/e-commerce-backend/db"
 )
 
 type User struct {
@@ -27,5 +25,6 @@ func (u *User) RegisterUserService() {
 	hashed_password = hex.EncodeToString(h.Sum(nil))
 
 	// check if user already exists
+	fmt.Println("pass", hashed_password)
 
 }

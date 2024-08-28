@@ -16,11 +16,11 @@ services:
       dockerfile: Dockerfile
       context: ./
     ports:
-      - ${API_PORT}:${API_PORT}
+      - ${API_PORT}:${SERVER_PORT}
     depends_on:
       - postgres
     environment:
-      - API_PORT=${API_PORT}
+      - SERVER_PORT=${SERVER_PORT}
     volumes:
       - ./:/app
 
