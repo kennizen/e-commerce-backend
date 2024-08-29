@@ -21,6 +21,8 @@ services:
       - postgres
     environment:
       - SERVER_PORT=${SERVER_PORT}
+      - JWT_TOKEN_SECRET=${JWT_TOKEN_SECRET}
+      - JWT_REFRESH_TOKEN_SECRET=${JWT_REFRESH_TOKEN_SECRET}
     volumes:
       - ./:/app
 

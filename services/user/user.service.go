@@ -77,3 +77,7 @@ func (u *User) RegisterUserService(w http.ResponseWriter) {
 
 	utils.SendResp("User created", http.StatusCreated, w)
 }
+
+func LoginUserService(w http.ResponseWriter) {
+
+}
