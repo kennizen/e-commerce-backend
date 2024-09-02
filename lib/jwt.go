@@ -4,13 +4,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type Claims struct {
 	Id    string `json:"id"`
 	Email string `json:"email"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 type Tokens struct {
@@ -20,12 +20,14 @@ type Tokens struct {
 	RefreshTokenExp int64
 }
 
-func NewClaims(id, email string, expiry int64) *Claims {
+func NewClaims(id, email string, expiry time.Time) *Claims {
 	return &Claims{
 		Id:    id,
 		Email: email,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: int64(expiry),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expiry),
+			ID:        id,
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 }
@@ -34,8 +36,8 @@ func GenerateTokens(id, email string) (Tokens, error) {
 	tokenExpTime := time.Now().Add(24 * time.Hour)
 	refTokenExpTime := time.Now().Add(24 * 7 * time.Hour)
 
-	tokenClaims := NewClaims(id, email, tokenExpTime.Unix())
-	refTokenClaims := NewClaims(id, email, refTokenExpTime.Unix())
+	tokenClaims := NewClaims(id, email, tokenExpTime)
+	refTokenClaims := NewClaims(id, email, refTokenExpTime)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, tokenClaims)
 	refToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refTokenClaims)
@@ -53,4 +55,18 @@ func GenerateTokens(id, email string) (Tokens, error) {
 	}
 
 	return Tokens{Token: tokenString, TokenExp: tokenExpTime.Unix(), RefreshToken: refTokenStr, RefreshTokenExp: refTokenExpTime.Unix()}, nil
+}
+
+func ValidateToken(tk string, secret string) bool {
+	claims := &Claims{}
+
+	token, err := jwt.ParseWithClaims(tk, claims, func(token *jwt.Token) (interface{}, error) {
+		return secret, nil
+	})
+
+	if err != nil || !token.Valid {
+		return false
+	}
+
+	return true
 }

@@ -4,13 +4,16 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/kennizen/e-commerce-backend/db"
+	"github.com/kennizen/e-commerce-backend/lib"
 	"github.com/kennizen/e-commerce-backend/utils"
 )
 
 type User struct {
+	Id         int    `json:"-"`
 	Firstname  string `json:"firstname"`
 	Middlename string `json:"middlename"`
 	Lastname   string `json:"lastname"`
@@ -18,6 +21,8 @@ type User struct {
 	Age        int    `json:"age"`
 	Avatar     string `json:"avatar"`
 	Password   string `json:"password"`
+	Created_at string `json:"-"`
+	Updated_at string `json:"-"`
 }
 
 func (u *User) RegisterUserService(w http.ResponseWriter) {
@@ -78,6 +83,44 @@ func (u *User) RegisterUserService(w http.ResponseWriter) {
 	utils.SendResp("User created", http.StatusCreated, w)
 }
 
-func LoginUserService(w http.ResponseWriter) {
+func (u *User) LoginUserService(w http.ResponseWriter) {
+	// check if user exists and correct password
+	var hashed_password string
+
+	h := sha256.New()
+	h.Write([]byte(u.Password))
+
+	hashed_password = hex.EncodeToString(h.Sum(nil))
+
+	rows, err := db.DB.Query("SELECT id, email FROM customers WHERE email = $1 and hashed_password = $2", u.Email, hashed_password)
+
+	if err != nil {
+		fmt.Println("Failed to query customers", err.Error())
+		utils.SendResp("Server error", http.StatusInternalServerError, w)
+		return
+	}
+
+	if !rows.Next() {
+		utils.SendResp("User not found", http.StatusNotFound, w)
+		return
+	}
+
+	var id int
+	var email string
+
+	for rows.Next() {
+		err := rows.Scan(&id, &email)
+		if err != nil {
+			log.Fatalln("Error scanning row", err.Error())
+		}
+	}
+
+	// all success then send access and refresh token
+	tokens, err1 := lib.GenerateTokens(string(id), email)
+
+	if err1 != nil {
+		utils.SendResp("Server error", http.StatusInternalServerError, w)
+		return
+	}
 
 }
