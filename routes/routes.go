@@ -3,11 +3,15 @@ package routes
 import (
 	"net/http"
 
-	"github.com/kennizen/e-commerce-backend/controllers/user"
+	controller "github.com/kennizen/e-commerce-backend/controllers"
+	"github.com/kennizen/e-commerce-backend/middlewares"
 )
 
 func RegisterRoutes(router *http.ServeMux) {
 	// auth routes
 	router.HandleFunc("POST /login", controller.LoginController)
 	router.HandleFunc("POST /register", controller.RegisterController)
+
+	// product routes
+	router.HandleFunc("GET /products", middlewares.Authenticate(controller.GetProducts))
 }

@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -14,10 +15,10 @@ type Claims struct {
 }
 
 type Tokens struct {
-	Token           string
-	TokenExp        int64
-	RefreshToken    string
-	RefreshTokenExp int64
+	Token           string `json:"token"`
+	TokenExp        int64  `json:"tokenExp"`
+	RefreshToken    string `json:"refreshToken"`
+	RefreshTokenExp int64  `json:"refreshTokenExp"`
 }
 
 func NewClaims(id, email string, expiry time.Time) *Claims {
@@ -42,31 +43,34 @@ func GenerateTokens(id, email string) (Tokens, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, tokenClaims)
 	refToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refTokenClaims)
 
-	tokenString, err := token.SignedString(os.Getenv("JWT_TOKEN_SECRET"))
+	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_TOKEN_SECRET")))
 
 	if err != nil {
 		return Tokens{}, err
 	}
 
-	refTokenStr, err1 := refToken.SignedString(os.Getenv("JWT_REFRESH_TOKEN_SECRET"))
+	refTokenStr, err1 := refToken.SignedString([]byte(os.Getenv("JWT_REFRESH_TOKEN_SECRET")))
 
 	if err1 != nil {
 		return Tokens{}, err1
 	}
 
+	fmt.Println("Access token", tokenString)
+	fmt.Println("Refresh token", refTokenStr)
+
 	return Tokens{Token: tokenString, TokenExp: tokenExpTime.Unix(), RefreshToken: refTokenStr, RefreshTokenExp: refTokenExpTime.Unix()}, nil
 }
 
-func ValidateToken(tk string, secret string) bool {
+func ValidateToken(tk string, secret string) (Claims, bool) {
 	claims := &Claims{}
 
 	token, err := jwt.ParseWithClaims(tk, claims, func(token *jwt.Token) (interface{}, error) {
-		return secret, nil
+		return []byte(secret), nil
 	})
 
 	if err != nil || !token.Valid {
-		return false
+		return Claims{}, false
 	}
 
-	return true
+	return Claims{Id: claims.Id, Email: claims.Email, RegisteredClaims: claims.RegisteredClaims}, true
 }

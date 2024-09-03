@@ -16,12 +16,22 @@ func NewResUser(msg string) *ResUser {
 	}
 }
 
-func SendResp(msg string, code int, w http.ResponseWriter) {
+func SendError(msg string, status int, w http.ResponseWriter) {
 	data := NewResUser(msg)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
+	w.WriteHeader(status)
 	err := json.NewEncoder(w).Encode(data)
+
+	if err != nil {
+		log.Fatal("Error parsing JSON")
+	}
+}
+
+func SendJson(resp any, status int, w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	err := json.NewEncoder(w).Encode(resp)
 
 	if err != nil {
 		log.Fatal("Error parsing JSON")
