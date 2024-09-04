@@ -37,13 +37,13 @@ func (u *User) RegisterUserService(w http.ResponseWriter) {
 	// check if user already exists
 	rows, err := db.DB.Query("SELECT id FROM customers WHERE email = $1", u.Email)
 
-	defer rows.Close()
-
 	if err != nil {
 		fmt.Println("Failed to query customers", err.Error())
 		utils.SendError("Server error", http.StatusInternalServerError, w)
 		return
 	}
+
+	defer rows.Close()
 
 	if data := rows.Next(); data {
 		utils.SendError("User already exists", http.StatusConflict, w)
@@ -97,13 +97,13 @@ func (u *User) LoginUserService(w http.ResponseWriter) {
 
 	rows, err := db.DB.Query("SELECT id, email FROM customers WHERE email = $1 and hashed_password = $2", u.Email, hashed_password)
 
-	defer rows.Close()
-
 	if err != nil {
 		fmt.Println("Failed to query customers", err.Error())
 		utils.SendError("Server error", http.StatusInternalServerError, w)
 		return
 	}
+
+	defer rows.Close()
 
 	isEmpty := true
 	var id int
