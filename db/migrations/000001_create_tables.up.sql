@@ -47,21 +47,13 @@ create table if not exists product_reviews (
 
 create table if not exists cart (
 	id bigserial primary key,
-	cart_of bigint not null,
-	items integer default 0,
+	customer_id bigint not null,
+	product_id bigint,
+	quantity bigint not null default 0 check (quantity >= 0),
 	created_at timestamp default current_timestamp,
 	updated_at timestamp default current_timestamp,
-	constraint fk_cust foreign key(cart_of) references customers(id) on delete cascade
-);
-
-create table if not exists cart_products_mapping (
-	id bigserial primary key,
-	cart_id bigint not null,
-	product_id bigint not null,
-	created_at timestamp default current_timestamp,
-	updated_at timestamp default current_timestamp,
-	constraint fk_cart foreign key(cart_id) references cart(id) on delete cascade,
-	constraint fk_prod foreign key(product_id) references products(id) on delete cascade
+	constraint fk_cust foreign key(customer_id) references customers(id) on delete cascade,
+	constraint fk_prod foreign key(product_id) references products(id) on delete set null
 );
 
 create table if not exists orders (

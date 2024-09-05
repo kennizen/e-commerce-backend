@@ -20,6 +20,7 @@ services:
     depends_on:
       - postgres
     environment:
+      - API_PORT=${API_PORT}
       - SERVER_PORT=${SERVER_PORT}
       - JWT_TOKEN_SECRET=${JWT_TOKEN_SECRET}
       - JWT_REFRESH_TOKEN_SECRET=${JWT_REFRESH_TOKEN_SECRET}

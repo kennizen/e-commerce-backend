@@ -20,6 +20,6 @@ func main() {
 		Handler: router,
 	}
 
-	fmt.Println("🚀🚀🚀 Server started on port", os.Getenv("SERVER_PORT"))
+	fmt.Println("🚀🚀🚀 Server started on host port", os.Getenv("API_PORT"))
 	log.Fatal(server.ListenAndServe())
 }

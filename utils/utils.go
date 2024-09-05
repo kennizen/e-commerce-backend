@@ -16,7 +16,7 @@ func NewResUser(msg string) *ResUser {
 	}
 }
 
-func SendError(msg string, status int, w http.ResponseWriter) {
+func SendMsg(msg string, status int, w http.ResponseWriter) {
 	data := NewResUser(msg)
 
 	w.Header().Set("Content-Type", "application/json")

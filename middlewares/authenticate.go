@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -17,26 +18,26 @@ func Authenticate(next http.HandlerFunc) http.HandlerFunc {
 		token := r.Header.Get("Authorization")
 
 		if token == "" {
-			utils.SendError("Invalid token", http.StatusUnauthorized, w)
+			utils.SendMsg("Invalid token", http.StatusUnauthorized, w)
 			return
 		}
 
 		bearerToken := strings.Split(token, " ")
 
 		if bearerToken[0] != "Bearer" && bearerToken[1] == "" {
-			utils.SendError("Invalid token", http.StatusUnauthorized, w)
+			utils.SendMsg("Invalid token", http.StatusUnauthorized, w)
 			return
 		}
 
 		claims, isValid := lib.ValidateToken(bearerToken[1], os.Getenv("JWT_TOKEN_SECRET"))
-		// isValid := lib.ValidateToken(bearerToken[1], os.Getenv("JWT_TOKEN_SECRET"))
+
+		fmt.Println("claims", claims)
 
 		if !isValid {
-			utils.SendError("Invalid token", http.StatusUnauthorized, w)
+			utils.SendMsg("Invalid token", http.StatusUnauthorized, w)
 		} else {
 			ctx := context.WithValue(r.Context(), ContextKey("userID"), claims.Id)
 			next.ServeHTTP(w, r.WithContext(ctx))
-			// next.ServeHTTP(w, r)
 		}
 	}
 }

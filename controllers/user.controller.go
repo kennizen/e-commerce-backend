@@ -6,22 +6,34 @@ import (
 	"net/http"
 
 	service "github.com/kennizen/e-commerce-backend/services"
+	"github.com/kennizen/e-commerce-backend/utils"
 )
 
+// @Summary      List accounts
+// @Description  get accounts
+// @Tags         accounts
+// @Accept       json
+// @Produce      json
+// @Failure      400
+// @Failure      404
+// @Failure      500
+// @Router       /login [post]
 func LoginController(w http.ResponseWriter, r *http.Request) {
 	var user service.User
 
 	err := json.NewDecoder(r.Body).Decode(&user)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		utils.SendMsg(err.Error(), http.StatusInternalServerError, w)
 		return
 	}
 
 	fmt.Println("user", user)
 
-	user.LoginUserService(w)
+	user.LoginUser(w)
 }
+
+// ---------------------------------------------------------------------------------------- //
 
 func RegisterController(w http.ResponseWriter, r *http.Request) {
 	var user service.User
@@ -29,11 +41,11 @@ func RegisterController(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&user)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		utils.SendMsg(err.Error(), http.StatusInternalServerError, w)
 		return
 	}
 
 	fmt.Println("user", user)
 
-	user.RegisterUserService(w)
+	user.RegisterUser(w)
 }

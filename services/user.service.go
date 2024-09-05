@@ -26,7 +26,7 @@ type User struct {
 	Updated_at string `json:"-"`
 }
 
-func (u *User) RegisterUserService(w http.ResponseWriter) {
+func (u *User) RegisterUser(w http.ResponseWriter) {
 	var hashed_password string
 
 	h := sha256.New()
@@ -39,14 +39,14 @@ func (u *User) RegisterUserService(w http.ResponseWriter) {
 
 	if err != nil {
 		fmt.Println("Failed to query customers", err.Error())
-		utils.SendError("Server error", http.StatusInternalServerError, w)
+		utils.SendMsg("Server error", http.StatusInternalServerError, w)
 		return
 	}
 
 	defer rows.Close()
 
-	if data := rows.Next(); data {
-		utils.SendError("User already exists", http.StatusConflict, w)
+	if rows.Next() {
+		utils.SendMsg("User already exists", http.StatusConflict, w)
 		return
 	}
 
@@ -55,7 +55,7 @@ func (u *User) RegisterUserService(w http.ResponseWriter) {
 
 	if err != nil {
 		fmt.Println("Failed to start a trx", err.Error())
-		utils.SendError("Server error", http.StatusInternalServerError, w)
+		utils.SendMsg("Server error", http.StatusInternalServerError, w)
 		return
 	}
 
@@ -71,7 +71,7 @@ func (u *User) RegisterUserService(w http.ResponseWriter) {
 	if err1 != nil {
 		fmt.Println("Failed to insert in customers", err1.Error())
 		trx.Rollback()
-		utils.SendError("Server error", http.StatusInternalServerError, w)
+		utils.SendMsg("Server error", http.StatusInternalServerError, w)
 		return
 	}
 
@@ -79,14 +79,16 @@ func (u *User) RegisterUserService(w http.ResponseWriter) {
 
 	if comErr != nil {
 		fmt.Println("Failed to commit", comErr.Error())
-		utils.SendError("Server error", http.StatusInternalServerError, w)
+		utils.SendMsg("Server error", http.StatusInternalServerError, w)
 		return
 	}
 
-	utils.SendError("User created", http.StatusCreated, w)
+	utils.SendMsg("User created", http.StatusCreated, w)
 }
 
-func (u *User) LoginUserService(w http.ResponseWriter) {
+// ---------------------------------------------------------------------------------------- //
+
+func (u *User) LoginUser(w http.ResponseWriter) {
 	// check if user exists and correct password
 	var hashed_password string
 
@@ -99,7 +101,7 @@ func (u *User) LoginUserService(w http.ResponseWriter) {
 
 	if err != nil {
 		fmt.Println("Failed to query customers", err.Error())
-		utils.SendError("Server error", http.StatusInternalServerError, w)
+		utils.SendMsg("Server error", http.StatusInternalServerError, w)
 		return
 	}
 
@@ -118,7 +120,7 @@ func (u *User) LoginUserService(w http.ResponseWriter) {
 	}
 
 	if isEmpty {
-		utils.SendError("User not found", http.StatusNotFound, w)
+		utils.SendMsg("User not found", http.StatusNotFound, w)
 		return
 	}
 
@@ -128,7 +130,7 @@ func (u *User) LoginUserService(w http.ResponseWriter) {
 	tokens, err1 := lib.GenerateTokens(strconv.Itoa(id), email)
 
 	if err1 != nil {
-		utils.SendError("Server error", http.StatusInternalServerError, w)
+		utils.SendMsg("Server error", http.StatusInternalServerError, w)
 		return
 	}
 

@@ -1,0 +1,118 @@
+package controller
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"strconv"
+
+	"github.com/kennizen/e-commerce-backend/middlewares"
+	service "github.com/kennizen/e-commerce-backend/services"
+	"github.com/kennizen/e-commerce-backend/utils"
+)
+
+func GetProducts(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Getting all products")
+
+	queryParams := r.URL.Query()
+
+	var page, limit string
+
+	if queryParams.Get("page") == "" {
+		page = "1"
+	} else {
+		page = queryParams.Get("page")
+	}
+
+	if queryParams.Get("limit") == "" {
+		limit = "-1"
+	} else {
+		limit = queryParams.Get("limit")
+	}
+
+	page1, err := strconv.Atoi(page)
+	limit1, err1 := strconv.Atoi(limit)
+
+	if err != nil || err1 != nil {
+		log.Fatalln("Error converting query params")
+	}
+
+	service.GetProducts(page1, limit1, w)
+}
+
+// ---------------------------------------------------------------------------------------- //
+
+func GetProduct(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	productId, err := strconv.Atoi(id)
+
+	if err != nil {
+		fmt.Println("Invalid product id")
+		utils.SendMsg("Invalid id", http.StatusBadRequest, w)
+		return
+	}
+
+	service.GetProduct(productId, w)
+}
+
+// ---------------------------------------------------------------------------------------- //
+
+func MarkFavorite(w http.ResponseWriter, r *http.Request) {
+	var product struct{ Id string }
+	userId := r.Context().Value(middlewares.ContextKey("userID"))
+
+	if userId == nil {
+		fmt.Println("userID not found.")
+		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		return
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&product)
+
+	if err != nil {
+		fmt.Println("Error in json decoding", err.Error())
+		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		return
+	}
+
+	service.MarkFavorite(userId.(string), product.Id, w)
+}
+
+// ---------------------------------------------------------------------------------------- //
+
+func UnMarkFavorite(w http.ResponseWriter, r *http.Request) {
+	var product struct{ Id string }
+	userId := r.Context().Value(middlewares.ContextKey("userID"))
+
+	err := json.NewDecoder(r.Body).Decode(&product)
+
+	if err != nil {
+		fmt.Println("Error in json decoding", err.Error())
+		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		return
+	}
+
+	if userId == nil {
+		fmt.Println("userID not found.")
+		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		return
+	}
+
+	service.UnMarkFavorite(userId.(string), product.Id, w)
+}
+
+// ---------------------------------------------------------------------------------------- //
+
+func GetFavorites(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value(middlewares.ContextKey("userID"))
+
+	if userId == nil {
+		fmt.Println("userID not found.")
+		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		return
+	}
+
+	service.GetFavorites(userId.(string), w)
+}
