@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -44,7 +43,7 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 // ---------------------------------------------------------------------------------------- //
 
 func GetProduct(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := r.PathValue("productId")
 
 	productId, err := strconv.Atoi(id)
 
@@ -60,7 +59,6 @@ func GetProduct(w http.ResponseWriter, r *http.Request) {
 // ---------------------------------------------------------------------------------------- //
 
 func MarkFavorite(w http.ResponseWriter, r *http.Request) {
-	var product struct{ Id string }
 	userId := r.Context().Value(middlewares.ContextKey("userID"))
 
 	if userId == nil {
@@ -69,38 +67,35 @@ func MarkFavorite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := json.NewDecoder(r.Body).Decode(&product)
+	id := r.PathValue("productId")
+
+	_, err := strconv.Atoi(id)
 
 	if err != nil {
-		fmt.Println("Error in json decoding", err.Error())
-		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		fmt.Println("Invalid product id")
+		utils.SendMsg("Invalid id", http.StatusBadRequest, w)
 		return
 	}
 
-	service.MarkFavorite(userId.(string), product.Id, w)
+	service.MarkFavorite(userId.(string), id, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
 
 func UnMarkFavorite(w http.ResponseWriter, r *http.Request) {
-	var product struct{ Id string }
 	userId := r.Context().Value(middlewares.ContextKey("userID"))
 
-	err := json.NewDecoder(r.Body).Decode(&product)
+	id := r.PathValue("productId")
+
+	_, err := strconv.Atoi(id)
 
 	if err != nil {
-		fmt.Println("Error in json decoding", err.Error())
-		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		fmt.Println("Invalid product id")
+		utils.SendMsg("Invalid id", http.StatusBadRequest, w)
 		return
 	}
 
-	if userId == nil {
-		fmt.Println("userID not found.")
-		utils.SendMsg("Bad request", http.StatusBadRequest, w)
-		return
-	}
-
-	service.UnMarkFavorite(userId.(string), product.Id, w)
+	service.UnMarkFavorite(userId.(string), id, w)
 }
 
 // ---------------------------------------------------------------------------------------- //

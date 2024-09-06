@@ -37,11 +37,14 @@ func RegisterRoutes(router *http.ServeMux) {
 
 	// product routes
 	router.HandleFunc("GET /products", controller.GetProducts)
-	router.HandleFunc("GET /product/{id}", controller.GetProduct)
-	router.HandleFunc("POST /product/mark/favorite", middlewares.Authenticate(controller.MarkFavorite))
-	router.HandleFunc("POST /product/un-mark/favorite", middlewares.Authenticate(controller.UnMarkFavorite))
+	router.HandleFunc("GET /product/{productId}", controller.GetProduct)
+	router.HandleFunc("POST /product/favorite/{productId}", middlewares.Authenticate(controller.MarkFavorite))
+	router.HandleFunc("DELETE /product/favorite/{productId}", middlewares.Authenticate(controller.UnMarkFavorite))
 	router.HandleFunc("GET /product/favorites", middlewares.Authenticate(controller.GetFavorites))
 
 	// cart routes
-	router.HandleFunc("POST /cart/add", middlewares.Authenticate(controller.AddToCart))
+	router.HandleFunc("GET /cart", middlewares.Authenticate(controller.GetCart))
+	router.HandleFunc("POST /cart", middlewares.Authenticate(controller.AddToCart))
+	router.HandleFunc("DELETE /cart/{productId}", middlewares.Authenticate(controller.RemoveFromCart))
+	router.HandleFunc("PATCH /cart", middlewares.Authenticate(controller.UpdateCartItems))
 }

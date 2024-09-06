@@ -28,8 +28,24 @@ type Product struct {
 	Shipping     string  `json:"shipping"`
 	Availability string  `json:"availability"`
 	ReturnPolicy string  `json:"returnPolicy"`
-	CreatedAt    string  `json:"createdAt"`
-	UpdatedAt    string  `json:"updatedAt"`
+	CreatedAt    string  `json:"-"`
+	UpdatedAt    string  `json:"-"`
+}
+
+type ProductReview struct {
+	Id        int
+	ReviewBy  int
+	ProductId int
+	Review    string
+	Rating    float32
+	CreatedAt string
+}
+
+type ProductReviewArgs struct {
+	Review    string
+	Rating    float32
+	ProductId string
+	UserId    string
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -223,7 +239,30 @@ func UnMarkFavorite(userId, productId string, w http.ResponseWriter) {
 // ---------------------------------------------------------------------------------------- //
 
 func GetFavorites(userId string, w http.ResponseWriter) {
-	rows, err := db.DB.Query("SELECT product_id FROM favorites WHERE customer_id = $1", userId)
+	rows, err := db.DB.Query(
+		`select 
+				p.id, 
+				p.title, 
+				p.description, 
+				p.category, 
+				p.price, 
+				p.stock, 
+				p.image, 
+				p.thumbnail, 
+				p.rating, 
+				p.weight, 
+				p.width, 
+				p.height, 
+				p."depth", 
+				p.warranty, 
+				p.shipping, 
+				p.availability,
+				p.return_policy 
+			from products p 
+			left join favorites f on f.product_id  = p.id
+			where f.customer_id = $1`,
+		userId,
+	)
 
 	if err != nil {
 		fmt.Println("Failed to get favorites")
@@ -231,18 +270,87 @@ func GetFavorites(userId string, w http.ResponseWriter) {
 		return
 	}
 
-	var productIds []string = make([]string, 0)
-	var id string
+	var products []Product = make([]Product, 0)
+	var product Product
 
 	for rows.Next() {
-		err := rows.Scan(&id)
+		err := rows.Scan(
+			&product.Id,
+			&product.Title,
+			&product.Description,
+			&product.Category,
+			&product.Price,
+			&product.Stock,
+			&product.Image,
+			&product.Thumbnail,
+			&product.Rating,
+			&product.Weight,
+			&product.Width,
+			&product.Height,
+			&product.Depth,
+			&product.Warranty,
+			&product.Shipping,
+			&product.Availability,
+			&product.ReturnPolicy,
+		)
 
 		if err != nil {
 			log.Fatalln("Error scanning row", err.Error())
 		}
 
-		productIds = append(productIds, id)
+		products = append(products, product)
 	}
 
-	utils.SendJson(map[string][]string{"data": productIds}, http.StatusOK, w)
+	utils.SendJson(map[string][]Product{"data": products}, http.StatusOK, w)
+}
+
+// ---------------------------------------------------------------------------------------- //
+
+func AddProductReview(args ProductReviewArgs, w http.ResponseWriter) {
+	var id string = ""
+
+	row := db.DB.QueryRow(
+		"SELECT id FROM product_reviews WHERE review_by = $1 AND product_id = $2", args.UserId, args.ProductId,
+	)
+	row.Scan(&id)
+
+	if id != "" {
+		fmt.Println("Review already added by user", args.UserId)
+		utils.SendMsg("Already reviewed the product", http.StatusBadRequest, w)
+		return
+	}
+
+	trx, trxErr := db.DB.Begin()
+
+	if trxErr != nil {
+		fmt.Println("Error in transaction", trxErr.Error())
+		utils.SendMsg("Server error", http.StatusInternalServerError, w)
+		return
+	}
+
+	_, err := trx.Exec(
+		"INSERT INTO product_reviews (review_by, product_id, review, rating) VALUES ($1, $2, $3, $4)", args.UserId, args.ProductId, args.Review, args.Rating,
+	)
+
+	if err != nil {
+		fmt.Println("Failed to add product review")
+		utils.SendMsg("Server error", http.StatusInternalServerError, w)
+		return
+	}
+
+	comErr := trx.Commit()
+
+	if comErr != nil {
+		fmt.Println("Error in transaction")
+		utils.SendMsg("Server error", http.StatusInternalServerError, w)
+		return
+	}
+
+	utils.SendMsg("Review Added", http.StatusOK, w)
+}
+
+// ---------------------------------------------------------------------------------------- //
+
+func UpdateProductReview(review ProductReview, w http.ResponseWriter) {
+
 }
