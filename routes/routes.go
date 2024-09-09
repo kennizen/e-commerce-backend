@@ -41,6 +41,7 @@ func RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("POST /product/favorite/{productId}", middlewares.Authenticate(controller.MarkFavorite))
 	router.HandleFunc("DELETE /product/favorite/{productId}", middlewares.Authenticate(controller.UnMarkFavorite))
 	router.HandleFunc("GET /product/favorites", middlewares.Authenticate(controller.GetFavorites))
+	router.HandleFunc("POST /product/review", middlewares.Authenticate(controller.AddProductReview))
 
 	// cart routes
 	router.HandleFunc("GET /cart", middlewares.Authenticate(controller.GetCart))

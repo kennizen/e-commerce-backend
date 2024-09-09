@@ -77,12 +77,12 @@ func UpdateCartItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var product struct {
+	var payload struct {
 		Id       string
 		Quantity int
 	}
 
-	err := json.NewDecoder(r.Body).Decode(&product)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 
 	if err != nil {
 		fmt.Println("Error in json decoding", err.Error())
@@ -92,11 +92,9 @@ func UpdateCartItems(w http.ResponseWriter, r *http.Request) {
 
 	service.UpdateCartItems(service.CartArgs{
 		UserId:    userId.(string),
-		ProductId: product.Id,
-		Quantity:  product.Quantity,
-	},
-		w,
-	)
+		ProductId: payload.Id,
+		Quantity:  payload.Quantity,
+	}, w)
 }
 
 // ---------------------------------------------------------------------------------------- //

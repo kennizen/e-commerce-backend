@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -110,4 +111,37 @@ func GetFavorites(w http.ResponseWriter, r *http.Request) {
 	}
 
 	service.GetFavorites(userId.(string), w)
+}
+
+// ---------------------------------------------------------------------------------------- //
+
+func AddProductReview(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value(middlewares.ContextKey("userID"))
+
+	if userId == nil {
+		fmt.Println("userID not found.")
+		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		return
+	}
+
+	var payload struct {
+		Review    string
+		Rating    float32
+		ProductId string
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&payload)
+
+	if err != nil {
+		fmt.Println("Error in json decoding", err.Error())
+		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		return
+	}
+
+	service.AddProductReview(service.ProductReviewArgs{
+		Review:    payload.Review,
+		Rating:    payload.Rating,
+		ProductId: payload.ProductId,
+		UserId:    userId.(string),
+	}, w)
 }

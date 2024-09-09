@@ -13,29 +13,30 @@ import (
 	"github.com/kennizen/e-commerce-backend/utils"
 )
 
-type User struct {
-	Id         int    `json:"-"`
-	Firstname  string `json:"firstname"`
-	Middlename string `json:"middlename"`
-	Lastname   string `json:"lastname"`
-	Email      string `json:"email"`
-	Age        int    `json:"age"`
-	Avatar     string `json:"avatar"`
-	Password   string `json:"password"`
-	Created_at string `json:"-"`
-	Updated_at string `json:"-"`
+type RegisterUserPayload struct {
+	Firstname  string `validate:"required"`
+	Middlename string
+	Lastname   string `validate:"required"`
+	Age        int    `validate:"required,gte=1"`
+	Email      string `validate:"required,email"`
+	Password   string `validate:"required"`
 }
 
-func (u *User) RegisterUser(w http.ResponseWriter) {
+type LoginUserPayload struct {
+	Email    string
+	Password string
+}
+
+func RegisterUser(arg RegisterUserPayload, w http.ResponseWriter) {
 	var hashed_password string
 
 	h := sha256.New()
-	h.Write([]byte(u.Password))
+	h.Write([]byte(arg.Password))
 
 	hashed_password = hex.EncodeToString(h.Sum(nil))
 
 	// check if user already exists
-	rows, err := db.DB.Query("SELECT id FROM customers WHERE email = $1", u.Email)
+	rows, err := db.DB.Query("SELECT id FROM customers WHERE email = $1", arg.Email)
 
 	if err != nil {
 		fmt.Println("Failed to query customers", err.Error())
@@ -59,14 +60,9 @@ func (u *User) RegisterUser(w http.ResponseWriter) {
 		return
 	}
 
-	var newAge int
-
-	if u.Age <= 0 {
-		newAge = 1
-	} else {
-		newAge = u.Age
-	}
-	_, err1 := trx.Exec("INSERT INTO customers (firstname, middlename, lastname, email, age, avatar, hashed_password) VALUES ($1, $2, $3, $4, $5, $6, $7)", u.Firstname, u.Middlename, u.Lastname, u.Email, newAge, u.Avatar, hashed_password)
+	_, err1 := trx.Exec(
+		"INSERT INTO customers (firstname, middlename, lastname, email, age, hashed_password) VALUES ($1, $2, $3, $4, $5, $6)", arg.Firstname, arg.Middlename, arg.Lastname, arg.Email, arg.Age, hashed_password,
+	)
 
 	if err1 != nil {
 		fmt.Println("Failed to insert in customers", err1.Error())
@@ -88,16 +84,16 @@ func (u *User) RegisterUser(w http.ResponseWriter) {
 
 // ---------------------------------------------------------------------------------------- //
 
-func (u *User) LoginUser(w http.ResponseWriter) {
+func LoginUser(arg LoginUserPayload, w http.ResponseWriter) {
 	// check if user exists and correct password
 	var hashed_password string
 
 	h := sha256.New()
-	h.Write([]byte(u.Password))
+	h.Write([]byte(arg.Password))
 
 	hashed_password = hex.EncodeToString(h.Sum(nil))
 
-	rows, err := db.DB.Query("SELECT id, email FROM customers WHERE email = $1 and hashed_password = $2", u.Email, hashed_password)
+	rows, err := db.DB.Query("SELECT id, email FROM customers WHERE email = $1 and hashed_password = $2", arg.Email, hashed_password)
 
 	if err != nil {
 		fmt.Println("Failed to query customers", err.Error())
