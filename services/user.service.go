@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/kennizen/e-commerce-backend/db"
@@ -120,8 +121,6 @@ func LoginUser(arg LoginUserPayload, w http.ResponseWriter) {
 		return
 	}
 
-	fmt.Println("id and email", id, email)
-
 	// all success then send access and refresh token
 	tokens, err1 := lib.GenerateTokens(strconv.Itoa(id), email)
 
@@ -131,4 +130,25 @@ func LoginUser(arg LoginUserPayload, w http.ResponseWriter) {
 	}
 
 	utils.SendJson(tokens, http.StatusOK, w)
+}
+
+// ---------------------------------------------------------------------------------------- //
+
+func RenewAccessToken(refToken string, w http.ResponseWriter) {
+	claims, isValid := lib.ValidateToken(refToken, os.Getenv("JWT_REFRESH_TOKEN_SECRET"))
+
+	if !isValid {
+		utils.SendMsg("Invalid token", http.StatusUnauthorized, w)
+		return
+	}
+
+	newTokens, err := lib.GenerateTokens(claims.Id, claims.Email)
+
+	if err != nil {
+		fmt.Println("error in generating new tokens")
+		utils.SendMsg("Server error", http.StatusInternalServerError, w)
+		return
+	}
+
+	utils.SendJson(newTokens, http.StatusCreated, w)
 }

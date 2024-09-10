@@ -13,8 +13,6 @@ import (
 )
 
 func GetProducts(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Getting all products")
-
 	queryParams := r.URL.Query()
 
 	var page, limit string
@@ -124,10 +122,19 @@ func AddProductReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	productId := r.PathValue("productId")
+
+	_, strConvErr := strconv.Atoi(productId)
+
+	if strConvErr != nil {
+		fmt.Println("Invalid product id")
+		utils.SendMsg("Invalid id", http.StatusBadRequest, w)
+		return
+	}
+
 	var payload struct {
-		Review    string
-		Rating    float32
-		ProductId string
+		Review string  `validate:"required"`
+		Rating float32 `validate:"required"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&payload)
@@ -138,10 +145,91 @@ func AddProductReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	valErr := utils.Validate(payload)
+
+	if valErr != nil {
+		fmt.Println("Invalid payload", valErr.Error())
+		utils.SendMsg("Invalid payload", http.StatusBadRequest, w)
+		return
+	}
+
 	service.AddProductReview(service.ProductReviewArgs{
 		Review:    payload.Review,
 		Rating:    payload.Rating,
-		ProductId: payload.ProductId,
+		ProductId: productId,
 		UserId:    userId.(string),
 	}, w)
+}
+
+// ---------------------------------------------------------------------------------------- //
+
+func UpdateProductReview(w http.ResponseWriter, r *http.Request) {
+	reviewId := r.PathValue("reviewId")
+
+	_, strConvErr := strconv.Atoi(reviewId)
+
+	if strConvErr != nil {
+		fmt.Println("Invalid review id")
+		utils.SendMsg("Invalid id", http.StatusBadRequest, w)
+		return
+	}
+
+	var payload struct {
+		Review string  `validate:"required"`
+		Rating float32 `validate:"required"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&payload)
+
+	if err != nil {
+		fmt.Println("Error in json decoding", err.Error())
+		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		return
+	}
+
+	valErr := utils.Validate(payload)
+
+	if valErr != nil {
+		fmt.Println("Invalid payload", valErr.Error())
+		utils.SendMsg("Invalid payload", http.StatusBadRequest, w)
+		return
+	}
+
+	service.UpdateProductReview(service.ProductUpdateArgs{
+		ReviewId: reviewId,
+		Review:   payload.Review,
+		Rating:   payload.Rating,
+	}, w)
+}
+
+// ---------------------------------------------------------------------------------------- //
+
+func DeleteProductReview(w http.ResponseWriter, r *http.Request) {
+	reviewId := r.PathValue("reviewId")
+
+	_, strConvErr := strconv.Atoi(reviewId)
+
+	if strConvErr != nil {
+		fmt.Println("Invalid review id")
+		utils.SendMsg("Invalid id", http.StatusBadRequest, w)
+		return
+	}
+
+	service.DeleteProductReview(reviewId, w)
+}
+
+// ---------------------------------------------------------------------------------------- //
+
+func GetProductReviewsByProductId(w http.ResponseWriter, r *http.Request) {
+	productId := r.PathValue("productId")
+
+	_, strConvErr := strconv.Atoi(productId)
+
+	if strConvErr != nil {
+		fmt.Println("Invalid product id")
+		utils.SendMsg("Invalid id", http.StatusBadRequest, w)
+		return
+	}
+
+	service.GetProductReviewsByProductId(productId, w)
 }

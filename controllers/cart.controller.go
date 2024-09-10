@@ -20,23 +20,40 @@ func AddToCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var product struct {
-		Id       string
-		Quantity int
-	}
+	productId := r.PathValue("productId")
 
-	err := json.NewDecoder(r.Body).Decode(&product)
+	_, err := strconv.Atoi(productId)
 
 	if err != nil {
-		fmt.Println("Error in json decoding", err.Error())
+		fmt.Println("Invalid product id")
+		utils.SendMsg("Invalid id", http.StatusBadRequest, w)
+		return
+	}
+
+	var payload struct {
+		Quantity int `validate:"required,gte=1"`
+	}
+
+	err1 := json.NewDecoder(r.Body).Decode(&payload)
+
+	if err1 != nil {
+		fmt.Println("Error in json decoding", err1.Error())
 		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		return
+	}
+
+	valErr := utils.Validate(payload)
+
+	if valErr != nil {
+		fmt.Println("Invalid payload", valErr.Error())
+		utils.SendMsg("Invalid payload", http.StatusBadRequest, w)
 		return
 	}
 
 	service.AddToCart(service.CartArgs{
 		UserId:    userId.(string),
-		ProductId: product.Id,
-		Quantity:  product.Quantity,
+		ProductId: productId,
+		Quantity:  payload.Quantity,
 	},
 		w,
 	)
@@ -77,22 +94,31 @@ func UpdateCartItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload struct {
-		Id       string
-		Quantity int
-	}
+	id := r.PathValue("productId")
 
-	err := json.NewDecoder(r.Body).Decode(&payload)
+	_, err := strconv.Atoi(id)
 
 	if err != nil {
-		fmt.Println("Error in json decoding", err.Error())
+		fmt.Println("Invalid product id")
+		utils.SendMsg("Invalid id", http.StatusBadRequest, w)
+		return
+	}
+
+	var payload struct {
+		Quantity int `validate:"required,gte=1"`
+	}
+
+	err1 := json.NewDecoder(r.Body).Decode(&payload)
+
+	if err1 != nil {
+		fmt.Println("Error in json decoding", err1.Error())
 		utils.SendMsg("Bad request", http.StatusBadRequest, w)
 		return
 	}
 
 	service.UpdateCartItems(service.CartArgs{
 		UserId:    userId.(string),
-		ProductId: payload.Id,
+		ProductId: id,
 		Quantity:  payload.Quantity,
 	}, w)
 }

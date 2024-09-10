@@ -2,7 +2,6 @@ package middlewares
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -30,8 +29,6 @@ func Authenticate(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		claims, isValid := lib.ValidateToken(bearerToken[1], os.Getenv("JWT_TOKEN_SECRET"))
-
-		fmt.Println("claims", claims)
 
 		if !isValid {
 			utils.SendMsg("Invalid token", http.StatusUnauthorized, w)

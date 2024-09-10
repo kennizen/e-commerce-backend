@@ -7,45 +7,21 @@ import (
 	"net/http"
 
 	"github.com/kennizen/e-commerce-backend/db"
+	"github.com/kennizen/e-commerce-backend/models"
 	"github.com/kennizen/e-commerce-backend/utils"
 )
-
-type Product struct {
-	Id           int     `json:"id"`
-	Title        string  `json:"title"`
-	Description  string  `json:"description"`
-	Category     string  `json:"category"`
-	Price        float32 `json:"price"`
-	Stock        int     `json:"stock"`
-	Image        string  `json:"image"`
-	Thumbnail    string  `json:"thumbnail"`
-	Rating       float32 `json:"rating"`
-	Weight       int     `json:"weight"`
-	Width        float32 `json:"width"`
-	Height       float32 `json:"height"`
-	Depth        float32 `json:"depth"`
-	Warranty     string  `json:"warranty"`
-	Shipping     string  `json:"shipping"`
-	Availability string  `json:"availability"`
-	ReturnPolicy string  `json:"returnPolicy"`
-	CreatedAt    string  `json:"-"`
-	UpdatedAt    string  `json:"-"`
-}
-
-type ProductReview struct {
-	Id        int
-	ReviewBy  int
-	ProductId int
-	Review    string
-	Rating    float32
-	CreatedAt string
-}
 
 type ProductReviewArgs struct {
 	Review    string
 	Rating    float32
 	ProductId string
 	UserId    string
+}
+
+type ProductUpdateArgs struct {
+	ReviewId string
+	Review   string
+	Rating   float32
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -72,8 +48,8 @@ func GetProducts(page, limit int, w http.ResponseWriter) {
 
 	var count int
 	rowCount.Scan(&count)
-	product := Product{}
-	products := make([]Product, 0)
+	product := models.Product{}
+	products := make([]models.Product, 0)
 	isEmpty := true
 
 	for rows.Next() {
@@ -125,7 +101,7 @@ func GetProduct(id int, w http.ResponseWriter) {
 		return
 	}
 
-	product := Product{}
+	product := models.Product{}
 
 	err := row.Scan(
 		&product.Id,
@@ -192,7 +168,7 @@ func MarkFavorite(userId, productId string, w http.ResponseWriter) {
 
 	rows.Close()
 
-	utils.SendJson(map[string]string{"data": "product added to favorites"}, http.StatusOK, w)
+	utils.SendJson(map[string]string{"data": "Product added to favorites"}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -233,7 +209,7 @@ func UnMarkFavorite(userId, productId string, w http.ResponseWriter) {
 		return
 	}
 
-	utils.SendJson(map[string]string{"data": "product removed from favorites"}, http.StatusOK, w)
+	utils.SendJson(map[string]string{"data": "Product removed from favorites"}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -270,8 +246,8 @@ func GetFavorites(userId string, w http.ResponseWriter) {
 		return
 	}
 
-	var products []Product = make([]Product, 0)
-	var product Product
+	var products []models.Product = make([]models.Product, 0)
+	var product models.Product
 
 	for rows.Next() {
 		err := rows.Scan(
@@ -301,7 +277,7 @@ func GetFavorites(userId string, w http.ResponseWriter) {
 		products = append(products, product)
 	}
 
-	utils.SendJson(map[string][]Product{"data": products}, http.StatusOK, w)
+	utils.SendJson(map[string][]models.Product{"data": products}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -328,15 +304,22 @@ func AddProductReview(args ProductReviewArgs, w http.ResponseWriter) {
 		return
 	}
 
-	_, err := trx.Exec(
-		"INSERT INTO product_reviews (review_by, product_id, review, rating) VALUES ($1, $2, $3, $4)", args.UserId, args.ProductId, args.Review, args.Rating,
+	row1 := trx.QueryRow(
+		"INSERT INTO product_reviews (review_by, product_id, review, rating) VALUES ($1, $2, $3, $4) RETURNING *",
+		args.UserId, args.ProductId, args.Review, args.Rating,
 	)
 
-	if err != nil {
-		fmt.Println("Failed to add product review")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
-	}
+	var proReview models.ProductReview
+
+	row1.Scan(
+		&proReview.Id,
+		&proReview.ReviewBy,
+		&proReview.ProductId,
+		&proReview.Review,
+		&proReview.Rating,
+		&proReview.CreatedAt,
+		&proReview.UpdatedAt,
+	)
 
 	comErr := trx.Commit()
 
@@ -346,11 +329,204 @@ func AddProductReview(args ProductReviewArgs, w http.ResponseWriter) {
 		return
 	}
 
-	utils.SendMsg("Review Added", http.StatusOK, w)
+	utils.SendJson(map[string]interface{}{
+		"message": "Product review added",
+		"data":    proReview,
+	}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func UpdateProductReview(review ProductReview, w http.ResponseWriter) {
+func UpdateProductReview(args ProductUpdateArgs, w http.ResponseWriter) {
+	var id string = ""
 
+	row := db.DB.QueryRow("SELECT id FROM product_reviews WHERE id = $1", args.ReviewId)
+	row.Scan(&id)
+
+	if id == "" {
+		fmt.Println("Review not found to update", args.ReviewId)
+		utils.SendMsg("Review not found to update", http.StatusBadRequest, w)
+		return
+	}
+
+	trx, trxErr := db.DB.Begin()
+
+	if trxErr != nil {
+		fmt.Println("Error in transaction", trxErr.Error())
+		utils.SendMsg("Server error", http.StatusInternalServerError, w)
+		return
+	}
+
+	row1 := trx.QueryRow(
+		"UPDATE product_reviews SET review = $1, rating = $2 WHERE id = $3 RETURNING *",
+		args.Review, args.Rating, args.ReviewId,
+	)
+
+	var proReview models.ProductReview
+
+	row1.Scan(
+		&proReview.Id,
+		&proReview.ReviewBy,
+		&proReview.ProductId,
+		&proReview.Review,
+		&proReview.Rating,
+		&proReview.CreatedAt,
+		&proReview.UpdatedAt,
+	)
+
+	comErr := trx.Commit()
+
+	if comErr != nil {
+		fmt.Println("Error in transaction")
+		utils.SendMsg("Server error", http.StatusInternalServerError, w)
+		return
+	}
+
+	utils.SendJson(map[string]interface{}{
+		"message": "Product review updated",
+		"data":    proReview,
+	}, http.StatusOK, w)
+}
+
+// ---------------------------------------------------------------------------------------- //
+
+func DeleteProductReview(reviewId string, w http.ResponseWriter) {
+	var id string = ""
+
+	row := db.DB.QueryRow("SELECT id FROM product_reviews WHERE id = $1", reviewId)
+	row.Scan(&id)
+
+	if id == "" {
+		fmt.Println("Review not found to delete", reviewId)
+		utils.SendMsg("Review not found to delete", http.StatusBadRequest, w)
+		return
+	}
+
+	trx, trxErr := db.DB.Begin()
+
+	if trxErr != nil {
+		fmt.Println("Error in transaction", trxErr.Error())
+		utils.SendMsg("Server error", http.StatusInternalServerError, w)
+		return
+	}
+
+	delRow := trx.QueryRow("DELETE FROM product_reviews WHERE id = $1 RETURNING *", reviewId)
+
+	var proReview models.ProductReview
+
+	delRow.Scan(
+		&proReview.Id,
+		&proReview.ReviewBy,
+		&proReview.ProductId,
+		&proReview.Review,
+		&proReview.Rating,
+		&proReview.CreatedAt,
+		&proReview.UpdatedAt,
+	)
+
+	comErr := trx.Commit()
+
+	if comErr != nil {
+		fmt.Println("Error in transaction")
+		utils.SendMsg("Server error", http.StatusInternalServerError, w)
+		return
+	}
+
+	utils.SendJson(map[string]interface{}{
+		"message": "Product review deleted",
+		"data":    proReview,
+	}, http.StatusOK, w)
+}
+
+// ---------------------------------------------------------------------------------------- //
+
+func GetProductReviewsByProductId(productId string, w http.ResponseWriter) {
+	rows, err := db.DB.Query(
+		`select 
+			pr.id, 
+			pr.review,
+			pr.rating, 
+			pr.created_at, 
+			pr.updated_at, 
+			c.id as customer_id, 
+			c.firstname, 
+			c.middlename, 
+			c.lastname, 
+			c.email, 
+			c.age, 
+			c.avatar 
+		from product_reviews pr 
+		right join customers c on pr.review_by = c.id 
+		where pr.product_id = $1`,
+		productId,
+	)
+
+	if err != nil {
+		fmt.Println("Failed to execute query")
+		utils.SendMsg("Server error", http.StatusInternalServerError, w)
+		return
+	}
+
+	type Review struct {
+		Id        string
+		Review    string
+		Rating    float32
+		CreatedAt string
+		UpdatedAt string
+	}
+
+	type Customer struct {
+		Id         string
+		Firstname  string
+		Middlename string
+		Lastname   string
+		Email      string
+		Age        string
+		Avatar     string
+	}
+
+	type Data struct {
+		Review   Review
+		Customer Customer
+	}
+
+	var resp []Data
+	isEmpty := true
+
+	for rows.Next() {
+		isEmpty = false
+		var rev = Review{}
+		var cust = Customer{}
+
+		err := rows.Scan(
+			&rev.Id,
+			&rev.Review,
+			&rev.Rating,
+			&rev.CreatedAt,
+			&rev.UpdatedAt,
+			&cust.Id,
+			&cust.Firstname,
+			&cust.Middlename,
+			&cust.Lastname,
+			&cust.Email,
+			&cust.Age,
+			&cust.Avatar,
+		)
+
+		if err != nil {
+			log.Fatalln("Error scanning row", err.Error())
+		}
+
+		resp = append(resp, Data{
+			Review:   rev,
+			Customer: cust,
+		})
+	}
+
+	if isEmpty {
+		utils.SendJson(map[string][]any{"data": make([]any, 0)}, http.StatusOK, w)
+		return
+	}
+
+	utils.SendJson(resp, http.StatusOK, w)
 }

@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -54,9 +53,6 @@ func GenerateTokens(id, email string) (Tokens, error) {
 	if err1 != nil {
 		return Tokens{}, err1
 	}
-
-	fmt.Println("Access token", tokenString)
-	fmt.Println("Refresh token", refTokenStr)
 
 	return Tokens{Token: tokenString, TokenExp: tokenExpTime.Unix(), RefreshToken: refTokenStr, RefreshTokenExp: refTokenExpTime.Unix()}, nil
 }

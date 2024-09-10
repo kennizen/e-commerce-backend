@@ -26,6 +26,14 @@ services:
       - JWT_REFRESH_TOKEN_SECRET=${JWT_REFRESH_TOKEN_SECRET}
     volumes:
       - ./:/app
+    
+  dozzle:
+    image: amir20/dozzle:v5.7.3
+    container_name: dozzle
+    ports:
+      - "6600:8080"  
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
   e-commerce-postgres-data: {}

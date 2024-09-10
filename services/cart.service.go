@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/kennizen/e-commerce-backend/db"
+	"github.com/kennizen/e-commerce-backend/models"
 	"github.com/kennizen/e-commerce-backend/utils"
 )
 
@@ -165,7 +166,8 @@ func GetCart(userId string, w http.ResponseWriter) {
 				p.warranty, 
 				p.shipping, 
 				p.availability,
-				p.return_policy 
+				p.return_policy,
+				c.quantity 
 			from products p 
 			left join cart c on c.product_id  = p.id
 			where c.customer_id = $1`,
@@ -178,8 +180,13 @@ func GetCart(userId string, w http.ResponseWriter) {
 		return
 	}
 
-	var products []Product = make([]Product, 0)
-	var product Product
+	type Data struct {
+		models.Product
+		Quantity int
+	}
+
+	var res []Data = make([]Data, 0)
+	var product Data
 
 	for rows.Next() {
 		err := rows.Scan(
@@ -200,14 +207,15 @@ func GetCart(userId string, w http.ResponseWriter) {
 			&product.Shipping,
 			&product.Availability,
 			&product.ReturnPolicy,
+			&product.Quantity,
 		)
 
 		if err != nil {
 			log.Fatalln("Error scanning row", err.Error())
 		}
 
-		products = append(products, product)
+		res = append(res, product)
 	}
 
-	utils.SendJson(map[string][]Product{"data": products}, http.StatusOK, w)
+	utils.SendJson(map[string][]Data{"data": res}, http.StatusOK, w)
 }

@@ -34,18 +34,25 @@ func RegisterRoutes(router *http.ServeMux) {
 	// auth routes
 	router.HandleFunc("POST /login", controller.LoginController)
 	router.HandleFunc("POST /register", controller.RegisterController)
+	router.HandleFunc("GET /renew-access-token", controller.RenewAccessToken)
 
 	// product routes
 	router.HandleFunc("GET /products", controller.GetProducts)
 	router.HandleFunc("GET /product/{productId}", controller.GetProduct)
-	router.HandleFunc("POST /product/favorite/{productId}", middlewares.Authenticate(controller.MarkFavorite))
-	router.HandleFunc("DELETE /product/favorite/{productId}", middlewares.Authenticate(controller.UnMarkFavorite))
-	router.HandleFunc("GET /product/favorites", middlewares.Authenticate(controller.GetFavorites))
-	router.HandleFunc("POST /product/review", middlewares.Authenticate(controller.AddProductReview))
+	router.HandleFunc("POST /favorite/product/{productId}", middlewares.Authenticate(controller.MarkFavorite))
+	router.HandleFunc("DELETE /favorite/product/{productId}", middlewares.Authenticate(controller.UnMarkFavorite))
+	router.HandleFunc("GET /favorite/products", middlewares.Authenticate(controller.GetFavorites))
+	router.HandleFunc("POST /review/product/{productId}", middlewares.Authenticate(controller.AddProductReview))
+	router.HandleFunc("PATCH /review/product/{reviewId}", middlewares.Authenticate(controller.UpdateProductReview))
+	router.HandleFunc("DELETE /review/product/{reviewId}", middlewares.Authenticate(controller.DeleteProductReview))
+	router.HandleFunc("GET /product/{productId}/reviews", controller.GetProductReviewsByProductId)
 
 	// cart routes
 	router.HandleFunc("GET /cart", middlewares.Authenticate(controller.GetCart))
-	router.HandleFunc("POST /cart", middlewares.Authenticate(controller.AddToCart))
-	router.HandleFunc("DELETE /cart/{productId}", middlewares.Authenticate(controller.RemoveFromCart))
-	router.HandleFunc("PATCH /cart", middlewares.Authenticate(controller.UpdateCartItems))
+	router.HandleFunc("POST /cart/product/{productId}", middlewares.Authenticate(controller.AddToCart))
+	router.HandleFunc("DELETE /cart/product/{productId}", middlewares.Authenticate(controller.RemoveFromCart))
+	router.HandleFunc("PATCH /cart/product/{productId}", middlewares.Authenticate(controller.UpdateCartItems))
+
+	// order routes
+
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	service "github.com/kennizen/e-commerce-backend/services"
 	"github.com/kennizen/e-commerce-backend/utils"
@@ -28,7 +29,13 @@ func LoginController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("user", payload)
+	valErr := utils.Validate(payload)
+
+	if valErr != nil {
+		fmt.Println("Invalid payload", valErr.Error())
+		utils.SendMsg("Invalid payload", http.StatusBadRequest, w)
+		return
+	}
 
 	service.LoginUser(payload, w)
 }
@@ -54,7 +61,25 @@ func RegisterController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("user", payload)
-
 	service.RegisterUser(payload, w)
+}
+
+// ---------------------------------------------------------------------------------------- //
+
+func RenewAccessToken(w http.ResponseWriter, r *http.Request) {
+	token := r.Header.Get("Authorization")
+
+	if token == "" {
+		utils.SendMsg("Invalid token", http.StatusUnauthorized, w)
+		return
+	}
+
+	bearerToken := strings.Split(token, " ")
+
+	if bearerToken[0] != "Bearer" && bearerToken[1] == "" {
+		utils.SendMsg("Invalid token", http.StatusUnauthorized, w)
+		return
+	}
+
+	service.RenewAccessToken(bearerToken[1], w)
 }
