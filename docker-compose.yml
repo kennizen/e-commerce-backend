@@ -31,9 +31,11 @@ services:
     image: amir20/dozzle:v5.7.3
     container_name: dozzle
     ports:
-      - "6600:8080"  
+      - "${DOZZLE_HOST_PORT}:8080"  
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      DOZZLE_BASE: /dozzle
 
 volumes:
   e-commerce-postgres-data: {}

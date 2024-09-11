@@ -4,28 +4,28 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
+	"github.com/kennizen/e-commerce-backend/middlewares"
 	service "github.com/kennizen/e-commerce-backend/services"
 	"github.com/kennizen/e-commerce-backend/utils"
 )
 
-// @Summary      List accounts
-// @Description  get accounts
-// @Tags         accounts
-// @Accept       json
-// @Produce      json
-// @Failure      400
-// @Failure      404
-// @Failure      500
-// @Router       /login [post]
-func LoginController(w http.ResponseWriter, r *http.Request) {
-	var payload service.LoginUserPayload
+func UpdateUserDetails(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value(middlewares.ContextKey("userID"))
+
+	if userId == nil {
+		fmt.Println("userID not found.")
+		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		return
+	}
+
+	var payload service.UserDetailsArgs
 
 	err := json.NewDecoder(r.Body).Decode(&payload)
 
 	if err != nil {
-		utils.SendMsg(err.Error(), http.StatusInternalServerError, w)
+		fmt.Println("Error in json decoding", err.Error())
+		utils.SendMsg("Bad request", http.StatusBadRequest, w)
 		return
 	}
 
@@ -37,49 +37,26 @@ func LoginController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.LoginUser(payload, w)
+	service.UpdateUserDetails(service.UserDetailsArgs{
+		Firstname:  payload.Firstname,
+		Middlename: payload.Middlename,
+		Lastname:   payload.Lastname,
+		Age:        payload.Age,
+		Email:      payload.Email,
+		Avatar:     payload.Avatar,
+	}, userId.(string), w)
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func RegisterController(w http.ResponseWriter, r *http.Request) {
-	var payload service.RegisterUserPayload
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value(middlewares.ContextKey("userID"))
 
-	err := json.NewDecoder(r.Body).Decode(&payload)
-
-	if err != nil {
-		fmt.Println("Invalid payload", err.Error())
-		utils.SendMsg("Invalid payload", http.StatusBadRequest, w)
+	if userId == nil {
+		fmt.Println("userID not found.")
+		utils.SendMsg("Bad request", http.StatusBadRequest, w)
 		return
 	}
 
-	valErr := utils.Validate(payload)
-
-	if valErr != nil {
-		fmt.Println("Invalid payload", valErr.Error())
-		utils.SendMsg("Invalid payload", http.StatusBadRequest, w)
-		return
-	}
-
-	service.RegisterUser(payload, w)
-}
-
-// ---------------------------------------------------------------------------------------- //
-
-func RenewAccessToken(w http.ResponseWriter, r *http.Request) {
-	token := r.Header.Get("Authorization")
-
-	if token == "" {
-		utils.SendMsg("Invalid token", http.StatusUnauthorized, w)
-		return
-	}
-
-	bearerToken := strings.Split(token, " ")
-
-	if bearerToken[0] != "Bearer" && bearerToken[1] == "" {
-		utils.SendMsg("Invalid token", http.StatusUnauthorized, w)
-		return
-	}
-
-	service.RenewAccessToken(bearerToken[1], w)
+	service.DeleteUser(userId.(string), w)
 }

@@ -1,154 +1,126 @@
 package service
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"log"
 	"net/http"
-	"os"
-	"strconv"
+	"time"
 
 	"github.com/kennizen/e-commerce-backend/db"
-	"github.com/kennizen/e-commerce-backend/lib"
+	"github.com/kennizen/e-commerce-backend/models"
 	"github.com/kennizen/e-commerce-backend/utils"
 )
 
-type RegisterUserPayload struct {
+type UserDetailsArgs struct {
 	Firstname  string `validate:"required"`
 	Middlename string
 	Lastname   string `validate:"required"`
 	Age        int    `validate:"required,gte=1"`
 	Email      string `validate:"required,email"`
-	Password   string `validate:"required"`
+	Avatar     string
 }
 
-type LoginUserPayload struct {
-	Email    string
-	Password string
-}
+func UpdateUserDetails(args UserDetailsArgs, userId string, w http.ResponseWriter) {
+	var id string = ""
 
-func RegisterUser(arg RegisterUserPayload, w http.ResponseWriter) {
-	var hashed_password string
+	row := db.DB.QueryRow("SELECT id FROM customers WHERE id = $1", userId)
+	row.Scan(&id)
 
-	h := sha256.New()
-	h.Write([]byte(arg.Password))
+	if id == "" {
+		fmt.Println("User not found to update")
+		utils.SendMsg("User not found to update", http.StatusBadRequest, w)
+		return
+	}
 
-	hashed_password = hex.EncodeToString(h.Sum(nil))
+	trx, trxErr := db.DB.Begin()
 
-	// check if user already exists
-	rows, err := db.DB.Query("SELECT id FROM customers WHERE email = $1", arg.Email)
-
-	if err != nil {
-		fmt.Println("Failed to query customers", err.Error())
+	if trxErr != nil {
+		fmt.Println("Error in transaction", trxErr.Error())
 		utils.SendMsg("Server error", http.StatusInternalServerError, w)
 		return
 	}
 
-	defer rows.Close()
-
-	if rows.Next() {
-		utils.SendMsg("User already exists", http.StatusConflict, w)
-		return
-	}
-
-	// if not user already present insert the user
-	trx, err := db.DB.Begin()
-
-	if err != nil {
-		fmt.Println("Failed to start a trx", err.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
-	}
-
-	_, err1 := trx.Exec(
-		"INSERT INTO customers (firstname, middlename, lastname, email, age, hashed_password) VALUES ($1, $2, $3, $4, $5, $6)", arg.Firstname, arg.Middlename, arg.Lastname, arg.Email, arg.Age, hashed_password,
+	trxRow := trx.QueryRow(
+		"UPDATE customers SET firstname = $1, middlename = $2, lastname = $3, email = $4, age = $5, avatar = $6, updated_at = $7 WHERE id = $8 RETURNING *", args.Firstname, args.Middlename, args.Lastname, args.Email, args.Age, args.Avatar, time.Now().UTC().Format(time.RFC3339), id,
 	)
 
-	if err1 != nil {
-		fmt.Println("Failed to insert in customers", err1.Error())
-		trx.Rollback()
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
-	}
+	var user models.User
+
+	trxRow.Scan(
+		&user.Id,
+		&user.Firstname,
+		&user.Middlename,
+		&user.Lastname,
+		&user.Email,
+		&user.Age,
+		&user.Avatar,
+		&user.Password,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
 
 	comErr := trx.Commit()
 
 	if comErr != nil {
-		fmt.Println("Failed to commit", comErr.Error())
+		fmt.Println("Error in transaction")
 		utils.SendMsg("Server error", http.StatusInternalServerError, w)
 		return
 	}
 
-	utils.SendMsg("User created", http.StatusCreated, w)
+	utils.SendJson(map[string]interface{}{
+		"message": "User updated",
+		"data":    user,
+	}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func LoginUser(arg LoginUserPayload, w http.ResponseWriter) {
-	// check if user exists and correct password
-	var hashed_password string
+func DeleteUser(userId string, w http.ResponseWriter) {
+	var id string = ""
 
-	h := sha256.New()
-	h.Write([]byte(arg.Password))
+	row := db.DB.QueryRow("SELECT id FROM customers WHERE id = $1", userId)
+	row.Scan(&id)
 
-	hashed_password = hex.EncodeToString(h.Sum(nil))
+	if id == "" {
+		fmt.Println("User not found to delete")
+		utils.SendMsg("User not found to delete", http.StatusBadRequest, w)
+		return
+	}
 
-	rows, err := db.DB.Query("SELECT id, email FROM customers WHERE email = $1 and hashed_password = $2", arg.Email, hashed_password)
+	trx, trxErr := db.DB.Begin()
 
-	if err != nil {
-		fmt.Println("Failed to query customers", err.Error())
+	if trxErr != nil {
+		fmt.Println("Error in transaction", trxErr.Error())
 		utils.SendMsg("Server error", http.StatusInternalServerError, w)
 		return
 	}
 
-	defer rows.Close()
+	trxRow := trx.QueryRow("DELETE FROM customers WHERE id = $1 RETURNING *", userId)
 
-	isEmpty := true
-	var id int
-	var email string
+	var user models.User
 
-	for rows.Next() {
-		isEmpty = false
-		err := rows.Scan(&id, &email)
-		if err != nil {
-			log.Fatalln("Error scanning row", err.Error())
-		}
-	}
+	trxRow.Scan(
+		&user.Id,
+		&user.Firstname,
+		&user.Middlename,
+		&user.Lastname,
+		&user.Email,
+		&user.Age,
+		&user.Avatar,
+		&user.Password,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
 
-	if isEmpty {
-		utils.SendMsg("User not found", http.StatusNotFound, w)
-		return
-	}
+	comErr := trx.Commit()
 
-	// all success then send access and refresh token
-	tokens, err1 := lib.GenerateTokens(strconv.Itoa(id), email)
-
-	if err1 != nil {
+	if comErr != nil {
+		fmt.Println("Error in transaction")
 		utils.SendMsg("Server error", http.StatusInternalServerError, w)
 		return
 	}
 
-	utils.SendJson(tokens, http.StatusOK, w)
-}
-
-// ---------------------------------------------------------------------------------------- //
-
-func RenewAccessToken(refToken string, w http.ResponseWriter) {
-	claims, isValid := lib.ValidateToken(refToken, os.Getenv("JWT_REFRESH_TOKEN_SECRET"))
-
-	if !isValid {
-		utils.SendMsg("Invalid token", http.StatusUnauthorized, w)
-		return
-	}
-
-	newTokens, err := lib.GenerateTokens(claims.Id, claims.Email)
-
-	if err != nil {
-		fmt.Println("error in generating new tokens")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
-	}
-
-	utils.SendJson(newTokens, http.StatusCreated, w)
+	utils.SendJson(map[string]interface{}{
+		"message": "User deleted",
+		"data":    user,
+	}, http.StatusOK, w)
 }

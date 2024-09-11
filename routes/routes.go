@@ -36,6 +36,10 @@ func RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("POST /register", controller.RegisterController)
 	router.HandleFunc("GET /renew-access-token", controller.RenewAccessToken)
 
+	// user routes
+	router.HandleFunc("PATCH /user", middlewares.Authenticate(controller.UpdateUserDetails))
+	router.HandleFunc("DELETE /user", middlewares.Authenticate(controller.DeleteUser))
+
 	// product routes
 	router.HandleFunc("GET /products", controller.GetProducts)
 	router.HandleFunc("GET /product/{productId}", controller.GetProduct)
