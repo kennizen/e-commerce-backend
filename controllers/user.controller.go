@@ -19,7 +19,7 @@ func UpdateUserDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload service.UserDetailsArgs
+	var payload service.UserDetailsPayload
 
 	err := json.NewDecoder(r.Body).Decode(&payload)
 
@@ -37,7 +37,7 @@ func UpdateUserDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.UpdateUserDetails(service.UserDetailsArgs{
+	service.UpdateUserDetails(service.UserDetailsPayload{
 		Firstname:  payload.Firstname,
 		Middlename: payload.Middlename,
 		Lastname:   payload.Lastname,
@@ -59,4 +59,42 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	service.DeleteUser(userId.(string), w)
+}
+
+// ---------------------------------------------------------------------------------------- //
+
+func AddAddress(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value(middlewares.ContextKey("userID"))
+
+	if userId == nil {
+		fmt.Println("userID not found.")
+		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		return
+	}
+
+	var payload service.UserAddressPayload
+
+	err := json.NewDecoder(r.Body).Decode(&payload)
+
+	if err != nil {
+		fmt.Println("Error in json decoding", err.Error())
+		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		return
+	}
+
+	valErr := utils.Validate(payload)
+
+	if valErr != nil {
+		fmt.Println("Invalid payload", valErr.Error())
+		utils.SendMsg("Invalid payload", http.StatusBadRequest, w)
+		return
+	}
+
+	service.AddAddress(service.UserAddressPayload{
+		Country: payload.Country,
+		State:   payload.State,
+		Zipcode: payload.Zipcode,
+		PhoneNo: payload.PhoneNo,
+		Address: payload.Address,
+	}, userId.(string), w)
 }

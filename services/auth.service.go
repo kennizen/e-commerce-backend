@@ -24,8 +24,8 @@ type RegisterUserPayload struct {
 }
 
 type LoginUserPayload struct {
-	Email    string
-	Password string
+	Email    string `validate:"required"`
+	Password string `validate:"required"`
 }
 
 func RegisterUser(arg RegisterUserPayload, w http.ResponseWriter) {

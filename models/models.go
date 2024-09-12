@@ -44,3 +44,15 @@ type ProductReview struct {
 	CreatedAt string  `json:"createdAt"`
 	UpdatedAt string  `json:"updatedAt"`
 }
+
+type Address struct {
+	Id          int    `json:"id"`
+	Country     string `json:"country"`
+	State       string `json:"state"`
+	Zipcode     string `json:"zipcode"`
+	Address     string `json:"address"`
+	PhoneNumber string `json:"phoneNumber"`
+	AddressOf   int    `json:"addressOf"`
+	CreatedAt   string `json:"createdAt"`
+	UpdatedAt   string `json:"updatedAt"`
+}

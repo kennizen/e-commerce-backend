@@ -25,6 +25,13 @@ import (
 
 // @host petstore.swagger.io
 // @BasePath /v2
+
+// remaining tasks ----------------------------------
+// add address CRUD routes
+// add place order route
+// add admin routes
+// complete swagger docs
+
 func RegisterRoutes(router *http.ServeMux) {
 	// api docs
 	router.HandleFunc("GET /swagger/*", httpSwagger.Handler(httpSwagger.URL(
@@ -39,6 +46,7 @@ func RegisterRoutes(router *http.ServeMux) {
 	// user routes
 	router.HandleFunc("PATCH /user", middlewares.Authenticate(controller.UpdateUserDetails))
 	router.HandleFunc("DELETE /user", middlewares.Authenticate(controller.DeleteUser))
+	router.HandleFunc("POST /user/address", middlewares.Authenticate(controller.AddAddress))
 
 	// product routes
 	router.HandleFunc("GET /products", controller.GetProducts)
