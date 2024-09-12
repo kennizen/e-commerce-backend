@@ -27,6 +27,7 @@ import (
 // @BasePath /v2
 
 // remaining tasks ----------------------------------
+// add time for updatedAt in update routes
 // add address CRUD routes
 // add place order route
 // add admin routes
