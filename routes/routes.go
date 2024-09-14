@@ -27,10 +27,7 @@ import (
 // @BasePath /v2
 
 // remaining tasks ----------------------------------
-// add time for updatedAt in update routes
-// add address CRUD routes
 // add place order route
-// add admin routes
 // complete swagger docs
 
 func RegisterRoutes(router *http.ServeMux) {
@@ -48,6 +45,9 @@ func RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("PATCH /user", middlewares.Authenticate(controller.UpdateUserDetails))
 	router.HandleFunc("DELETE /user", middlewares.Authenticate(controller.DeleteUser))
 	router.HandleFunc("POST /user/address", middlewares.Authenticate(controller.AddAddress))
+	router.HandleFunc("PATCH /user/address/{addressId}", middlewares.Authenticate(controller.UpdateAddress))
+	router.HandleFunc("DELETE /user/address/{addressId}", middlewares.Authenticate(controller.DeleteAddress))
+	router.HandleFunc("GET /user/addresses", middlewares.Authenticate(controller.GetAddresses))
 
 	// product routes
 	router.HandleFunc("GET /products", controller.GetProducts)
@@ -67,5 +67,5 @@ func RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("PATCH /cart/product/{productId}", middlewares.Authenticate(controller.UpdateCartItems))
 
 	// order routes
-
+	router.HandleFunc("post /order", middlewares.Authenticate(controller.PlaceOrder))
 }

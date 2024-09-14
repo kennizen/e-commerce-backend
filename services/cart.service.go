@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/kennizen/e-commerce-backend/db"
 	"github.com/kennizen/e-commerce-backend/models"
@@ -126,7 +127,10 @@ func UpdateCartItems(args CartArgs, w http.ResponseWriter) {
 		return
 	}
 
-	_, err := trx.Exec("UPDATE cart SET quantity = $1 WHERE id = $2", result.Quantity+args.Quantity, result.Id)
+	_, err := trx.Exec(
+		"UPDATE cart SET quantity = $1, updated_at = $2 WHERE id = $3",
+		result.Quantity+args.Quantity, time.Now().UTC().Format(time.RFC3339), result.Id,
+	)
 
 	if err != nil {
 		fmt.Println("Failed to update cart.")

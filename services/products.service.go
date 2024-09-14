@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/kennizen/e-commerce-backend/db"
 	"github.com/kennizen/e-commerce-backend/models"
@@ -358,8 +359,8 @@ func UpdateProductReview(args ProductUpdateArgs, w http.ResponseWriter) {
 	}
 
 	row1 := trx.QueryRow(
-		"UPDATE product_reviews SET review = $1, rating = $2 WHERE id = $3 RETURNING *",
-		args.Review, args.Rating, args.ReviewId,
+		"UPDATE product_reviews SET review = $1, rating = $2, updated_at = $3 WHERE id = $4 RETURNING *",
+		args.Review, args.Rating, time.Now().UTC().Format(time.RFC3339), args.ReviewId,
 	)
 
 	var proReview models.ProductReview
