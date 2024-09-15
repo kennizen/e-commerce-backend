@@ -27,7 +27,6 @@ import (
 // @BasePath /v2
 
 // remaining tasks ----------------------------------
-// add place order route
 // complete swagger docs
 
 func RegisterRoutes(router *http.ServeMux) {
@@ -67,5 +66,6 @@ func RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("PATCH /cart/product/{productId}", middlewares.Authenticate(controller.UpdateCartItems))
 
 	// order routes
-	router.HandleFunc("post /order", middlewares.Authenticate(controller.PlaceOrder))
+	router.HandleFunc("POST /order", middlewares.Authenticate(controller.PlaceOrder))
+	router.HandleFunc("GET /orders", middlewares.Authenticate(controller.GetOrders))
 }

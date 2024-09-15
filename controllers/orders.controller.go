@@ -43,3 +43,17 @@ func PlaceOrder(w http.ResponseWriter, r *http.Request) {
 		PaymentMethod: payload.PaymentMethod,
 	}, userId.(string), w)
 }
+
+// ---------------------------------------------------------------------------------------- //
+
+func GetOrders(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value(middlewares.ContextKey("userID"))
+
+	if userId == nil {
+		fmt.Println("userID not found.")
+		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		return
+	}
+
+	service.GetOrders(userId.(string), w)
+}

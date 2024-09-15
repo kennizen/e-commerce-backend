@@ -10,6 +10,17 @@ services:
     volumes:
       - "e-commerce-postgres-data:/var/lib/postgresql/data"
 
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - ${PGADMIN_PORT}:80
+    depends_on:
+      - postgres
+
   api-e-commerce:
     container_name: e-commerce-backend
     build:
@@ -26,12 +37,12 @@ services:
       - JWT_REFRESH_TOKEN_SECRET=${JWT_REFRESH_TOKEN_SECRET}
     volumes:
       - ./:/app
-    
+
   dozzle:
     image: amir20/dozzle:v5.7.3
     container_name: dozzle
     ports:
-      - "${DOZZLE_HOST_PORT}:8080"  
+      - "${DOZZLE_HOST_PORT}:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
