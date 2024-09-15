@@ -129,7 +129,7 @@ func LoginUser(arg LoginUserPayload, w http.ResponseWriter) {
 		return
 	}
 
-	utils.SendJson(tokens, http.StatusOK, w)
+	utils.SendJson(utils.ResUserWithData{Msg: "Tokens generated", Data: tokens}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -150,5 +150,5 @@ func RenewAccessToken(refToken string, w http.ResponseWriter) {
 		return
 	}
 
-	utils.SendJson(newTokens, http.StatusCreated, w)
+	utils.SendJson(utils.ResUserWithData{Msg: "Tokens generated", Data: newTokens}, http.StatusCreated, w)
 }

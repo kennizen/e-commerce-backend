@@ -221,5 +221,5 @@ func GetCart(userId string, w http.ResponseWriter) {
 		res = append(res, product)
 	}
 
-	utils.SendJson(map[string][]Data{"data": res}, http.StatusOK, w)
+	utils.SendJson(utils.ResUserWithData{Msg: "Cart data", Data: res}, http.StatusOK, w)
 }

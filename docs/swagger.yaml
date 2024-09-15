@@ -1,11 +1,57 @@
-basePath: /v2
-host: petstore.swagger.io
+definitions:
+  lib.Tokens:
+    properties:
+      refreshToken:
+        type: string
+      refreshTokenExp:
+        type: integer
+      token:
+        type: string
+      tokenExp:
+        type: integer
+    type: object
+  service.LoginUserPayload:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  service.RegisterUserPayload:
+    properties:
+      age:
+        minimum: 1
+        type: integer
+      email:
+        type: string
+      firstname:
+        type: string
+      lastname:
+        type: string
+      middlename:
+        type: string
+      password:
+        type: string
+    required:
+    - age
+    - email
+    - firstname
+    - lastname
+    - password
+    type: object
+  utils.ResUser:
+    properties:
+      message:
+        type: string
+    type: object
+host: localhost:8080
 info:
   contact:
-    email: support@swagger.io
-    name: API Support
-    url: http://www.swagger.io/support
-  description: This is a sample server Petstore server.
+    email: prachurjyagogoi123@gmail.com
+  description: This is a dummy backend for an ecommerce store.
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -17,17 +63,90 @@ paths:
     post:
       consumes:
       - application/json
-      description: get accounts
+      description: API for user login using email and password
+      parameters:
+      - description: Login credentials
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/service.LoginUserPayload'
       produces:
       - application/json
       responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/lib.Tokens'
         "400":
           description: Bad Request
-        "404":
-          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ResUser'
         "500":
           description: Internal Server Error
-      summary: List accounts
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: User Login
       tags:
-      - accounts
+      - Auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: API for registering users
+      parameters:
+      - description: Register user payload
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/service.RegisterUserPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: User Register
+      tags:
+      - Auth
+  /renew-access-token:
+    get:
+      consumes:
+      - application/json
+      description: API for renewing the access token. Make sure to provide the refresh
+        token to get the new tokens
+      parameters:
+      - description: Bearer refreshToken
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/lib.Tokens'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Renew Access Token
+      tags:
+      - Auth
 swagger: "2.0"

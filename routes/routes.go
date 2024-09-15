@@ -13,22 +13,15 @@ import (
 
 // @title E-Commerce Backend API
 // @version 1.0
-// @description This is a sample server Petstore server.
+// @description This is a dummy backend for an ecommerce store.
 // @termsOfService http://swagger.io/terms/
 
-// @contact.name API Support
-// @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
+// @contact.email prachurjyagogoi123@gmail.com
 
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host petstore.swagger.io
-// @BasePath /v2
-
-// remaining tasks ----------------------------------
-// complete swagger docs
-
+// @host localhost:8080
 func RegisterRoutes(router *http.ServeMux) {
 	// api docs
 	router.HandleFunc("GET /swagger/*", httpSwagger.Handler(httpSwagger.URL(

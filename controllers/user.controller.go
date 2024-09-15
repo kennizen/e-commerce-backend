@@ -11,6 +11,17 @@ import (
 	"github.com/kennizen/e-commerce-backend/utils"
 )
 
+// @Summary      Update user details
+// @Description  API for updating users details
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Param        user body service.UserDetailsPayload true "Update user details payload"
+// @Param        Authorization header string true "Bearer accessToken"
+// @Success      200  {object} map[string]any{"message": "User updated", "data": models.User}
+// @Failure      400  {object} utils.ResUser
+// @Failure      500  {object} utils.ResUser
+// @Router       /register [post]
 func UpdateUserDetails(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value(middlewares.ContextKey("userID"))
 

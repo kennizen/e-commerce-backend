@@ -164,8 +164,10 @@ func GetOrders(userId string, w http.ResponseWriter) {
 
 	var data Data
 	var resp []Data
+	isEmpty := true
 
 	for rows.Next() {
+		isEmpty = false
 		err := rows.Scan(
 			&data.Order.OrderId,
 			&data.Order.Quantity,
@@ -194,5 +196,10 @@ func GetOrders(userId string, w http.ResponseWriter) {
 		resp = append(resp, data)
 	}
 
-	utils.SendJson(map[string]any{"data": resp}, http.StatusOK, w)
+	if isEmpty {
+		utils.SendJson(utils.ResUserWithData{Msg: "Orders data", Data: make([]any, 0)}, http.StatusOK, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{Msg: "Orders data", Data: resp}, http.StatusOK, w)
 }
