@@ -20,6 +20,7 @@ import (
 // @Param        Authorization header string true "Bearer accessToken"
 // @Success      200  {object} utils.ResUserWithData{data=models.User}
 // @Failure      400  {object} utils.ResUser
+// @Failure      401  {object} utils.ResUser
 // @Failure      500  {object} utils.ResUser
 // @Router       /user [patch]
 func UpdateUserDetails(w http.ResponseWriter, r *http.Request) {
@@ -68,6 +69,7 @@ func UpdateUserDetails(w http.ResponseWriter, r *http.Request) {
 // @Param        Authorization header string true "Bearer accessToken"
 // @Success      200  {object} utils.ResUserWithData{data=models.User}
 // @Failure      400  {object} utils.ResUser
+// @Failure      401  {object} utils.ResUser
 // @Failure      500  {object} utils.ResUser
 // @Router       /user [delete]
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
@@ -93,6 +95,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 // @Param        Authorization header string true "Bearer accessToken"
 // @Success      200  {object} utils.ResUserWithData{data=models.Address}
 // @Failure      400  {object} utils.ResUser
+// @Failure      401  {object} utils.ResUser
 // @Failure      500  {object} utils.ResUser
 // @Router       /user/address [post]
 func AddAddress(w http.ResponseWriter, r *http.Request) {
@@ -134,7 +137,7 @@ func AddAddress(w http.ResponseWriter, r *http.Request) {
 // ---------------------------------------------------------------------------------------- //
 
 // @Summary      Update user address.
-// @Description  API for updating a user addresse.
+// @Description  API for updating a user address.
 // @Tags         User
 // @Accept       json
 // @Produce      json
@@ -143,6 +146,7 @@ func AddAddress(w http.ResponseWriter, r *http.Request) {
 // @Param        Authorization header string true "Bearer accessToken"
 // @Success      200  {object} utils.ResUserWithData{data=models.Address}
 // @Failure      400  {object} utils.ResUser
+// @Failure      401  {object} utils.ResUser
 // @Failure      500  {object} utils.ResUser
 // @Router       /user/address/{addressId} [put]
 func UpdateAddress(w http.ResponseWriter, r *http.Request) {
@@ -185,6 +189,17 @@ func UpdateAddress(w http.ResponseWriter, r *http.Request) {
 
 // ---------------------------------------------------------------------------------------- //
 
+// @Summary      Delete user address.
+// @Description  API for deleting a user address.
+// @Tags         User
+// @Produce      json
+// @Param        addressId path string true "Address id"
+// @Param        Authorization header string true "Bearer accessToken"
+// @Success      200  {object} utils.ResUserWithData{data=models.Address}
+// @Failure      400  {object} utils.ResUser
+// @Failure      401  {object} utils.ResUser
+// @Failure      500  {object} utils.ResUser
+// @Router       /user/address/{addressId} [delete]
 func DeleteAddress(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value(middlewares.ContextKey("userID"))
 
@@ -209,6 +224,16 @@ func DeleteAddress(w http.ResponseWriter, r *http.Request) {
 
 // ---------------------------------------------------------------------------------------- //
 
+// @Summary      Get all user addresses.
+// @Description  API for fetching all user addresses.
+// @Tags         User
+// @Produce      json
+// @Param        Authorization header string true "Bearer accessToken"
+// @Success      200  {object} utils.ResUserWithData{data=[]models.Address}
+// @Failure      400  {object} utils.ResUser
+// @Failure      401  {object} utils.ResUser
+// @Failure      500  {object} utils.ResUser
+// @Router       /user/addresses [get]
 func GetAddresses(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value(middlewares.ContextKey("userID"))
 

@@ -12,6 +12,15 @@ import (
 	"github.com/kennizen/e-commerce-backend/utils"
 )
 
+// @Summary      Get all products.
+// @Description  API for fetching all products.
+// @Tags         Products
+// @Produce      json
+// @Param        page query int true "Page number"
+// @Param        limit query int true "The number of products to fetch"
+// @Success      200  {object} utils.ResUserWithData{data=service.ProductsResponse}
+// @Failure      500  {object} utils.ResUser
+// @Router       /products [get]
 func GetProducts(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 
@@ -41,6 +50,16 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 
 // ---------------------------------------------------------------------------------------- //
 
+// @Summary      Get a product details.
+// @Description  API for fetching a product.
+// @Tags         Products
+// @Produce      json
+// @Param        productId path string true "Product ID"
+// @Success      200  {object} utils.ResUserWithData{data=models.Product}
+// @Failure      400  {object} utils.ResUser
+// @Failure      404  {object} utils.ResUser
+// @Failure      500  {object} utils.ResUser
+// @Router       /product/{productId} [get]
 func GetProduct(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("productId")
 
@@ -57,6 +76,17 @@ func GetProduct(w http.ResponseWriter, r *http.Request) {
 
 // ---------------------------------------------------------------------------------------- //
 
+// @Summary      Mark a product favorite.
+// @Description  API for making a product as favorite.
+// @Tags         Products
+// @Produce      json
+// @Param        productId path string true "Product ID"
+// @Success      200  {object} utils.ResUser
+// @Failure      400  {object} utils.ResUser
+// @Failure      401  {object} utils.ResUser
+// @Failure      409  {object} utils.ResUser
+// @Failure      500  {object} utils.ResUser
+// @Router       /favorite/product/{productId} [post]
 func MarkFavorite(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value(middlewares.ContextKey("userID"))
 
@@ -81,6 +111,16 @@ func MarkFavorite(w http.ResponseWriter, r *http.Request) {
 
 // ---------------------------------------------------------------------------------------- //
 
+// @Summary      UnMark a product as favorite.
+// @Description  API for removing a product as favorite.
+// @Tags         Products
+// @Produce      json
+// @Param        productId path string true "Product ID"
+// @Success      200  {object} utils.ResUser
+// @Failure      400  {object} utils.ResUser
+// @Failure      401  {object} utils.ResUser
+// @Failure      500  {object} utils.ResUser
+// @Router       /favorite/product/{productId} [delete]
 func UnMarkFavorite(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value(middlewares.ContextKey("userID"))
 
@@ -99,6 +139,15 @@ func UnMarkFavorite(w http.ResponseWriter, r *http.Request) {
 
 // ---------------------------------------------------------------------------------------- //
 
+// @Summary      Get all favorite products.
+// @Description  API for getting all favorite products.
+// @Tags         Products
+// @Produce      json
+// @Success      200  {object} utils.ResUserWithData{data=[]models.Product}
+// @Failure      400  {object} utils.ResUser
+// @Failure      401  {object} utils.ResUser
+// @Failure      500  {object} utils.ResUser
+// @Router       /favorite/products [get]
 func GetFavorites(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value(middlewares.ContextKey("userID"))
 
@@ -113,6 +162,19 @@ func GetFavorites(w http.ResponseWriter, r *http.Request) {
 
 // ---------------------------------------------------------------------------------------- //
 
+// @Summary      Add a product review.
+// @Description  API for adding a product review by user.
+// @Tags         Products
+// @Accept       json
+// @Produce      json
+// @Param        user body service.ProductReviewPayload true "Product review payload"
+// @Param        productId path string true "Product id"
+// @Param        Authorization header string true "Bearer accessToken"
+// @Success      200  {object} utils.ResUserWithData{data=models.ProductReview}
+// @Failure      400  {object} utils.ResUser
+// @Failure      401  {object} utils.ResUser
+// @Failure      500  {object} utils.ResUser
+// @Router       /review/product/{productId} [post]
 func AddProductReview(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value(middlewares.ContextKey("userID"))
 
@@ -132,10 +194,7 @@ func AddProductReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload struct {
-		Review string  `validate:"required"`
-		Rating float32 `validate:"required"`
-	}
+	var payload service.ProductReviewPayload
 
 	err := json.NewDecoder(r.Body).Decode(&payload)
 
@@ -153,17 +212,36 @@ func AddProductReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.AddProductReview(service.ProductReviewArgs{
-		Review:    payload.Review,
-		Rating:    payload.Rating,
-		ProductId: productId,
-		UserId:    userId.(string),
-	}, w)
+	service.AddProductReview(service.ProductReviewPayload{
+		Review: payload.Review,
+		Rating: payload.Rating,
+	}, productId, userId.(string), w)
 }
 
 // ---------------------------------------------------------------------------------------- //
 
+// @Summary      Update a product review.
+// @Description  API for updating a product review by user.
+// @Tags         Products
+// @Accept       json
+// @Produce      json
+// @Param        user body service.ProductReviewPayload true "Product review payload"
+// @Param        reviewId path string true "Review ID"
+// @Param        Authorization header string true "Bearer accessToken"
+// @Success      200  {object} utils.ResUserWithData{data=models.ProductReview}
+// @Failure      400  {object} utils.ResUser
+// @Failure      401  {object} utils.ResUser
+// @Failure      500  {object} utils.ResUser
+// @Router       /review/product/{reviewId} [put]
 func UpdateProductReview(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value(middlewares.ContextKey("userID"))
+
+	if userId == nil {
+		fmt.Println("userID not found.")
+		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		return
+	}
+
 	reviewId := r.PathValue("reviewId")
 
 	_, strConvErr := strconv.Atoi(reviewId)
@@ -174,10 +252,7 @@ func UpdateProductReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload struct {
-		Review string  `validate:"required"`
-		Rating float32 `validate:"required"`
-	}
+	var payload service.ProductReviewPayload
 
 	err := json.NewDecoder(r.Body).Decode(&payload)
 
@@ -195,16 +270,35 @@ func UpdateProductReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.UpdateProductReview(service.ProductUpdateArgs{
-		ReviewId: reviewId,
-		Review:   payload.Review,
-		Rating:   payload.Rating,
-	}, w)
+	service.UpdateProductReview(service.ProductReviewPayload{
+		Review: payload.Review,
+		Rating: payload.Rating,
+	}, reviewId, userId.(string), w)
 }
 
 // ---------------------------------------------------------------------------------------- //
 
+// @Summary      Delete a product review.
+// @Description  API for deleting a product review by user.
+// @Tags         Products
+// @Accept       json
+// @Produce      json
+// @Param        reviewId path string true "Review ID"
+// @Param        Authorization header string true "Bearer accessToken"
+// @Success      200  {object} utils.ResUserWithData{data=models.ProductReview}
+// @Failure      400  {object} utils.ResUser
+// @Failure      401  {object} utils.ResUser
+// @Failure      500  {object} utils.ResUser
+// @Router       /review/product/{reviewId} [delete]
 func DeleteProductReview(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value(middlewares.ContextKey("userID"))
+
+	if userId == nil {
+		fmt.Println("userID not found.")
+		utils.SendMsg("Bad request", http.StatusBadRequest, w)
+		return
+	}
+
 	reviewId := r.PathValue("reviewId")
 
 	_, strConvErr := strconv.Atoi(reviewId)
@@ -215,11 +309,20 @@ func DeleteProductReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.DeleteProductReview(reviewId, w)
+	service.DeleteProductReview(reviewId, userId.(string), w)
 }
 
 // ---------------------------------------------------------------------------------------- //
 
+// @Summary      Get all reviews for a product.
+// @Description  API for fetching all the reviews for a product made by multiple users.
+// @Tags         Products
+// @Produce      json
+// @Param        productId path string true "Product ID"
+// @Success      200  {object} utils.ResUserWithData{data=[]service.AllReviewsResponse}
+// @Failure      400  {object} utils.ResUser
+// @Failure      500  {object} utils.ResUser
+// @Router       /product/{productId}/reviews [get]
 func GetProductReviewsByProductId(w http.ResponseWriter, r *http.Request) {
 	productId := r.PathValue("productId")
 

@@ -31,6 +31,64 @@ definitions:
       zipcode:
         type: string
     type: object
+  models.Product:
+    properties:
+      availability:
+        type: string
+      category:
+        type: string
+      createdAt:
+        type: string
+      depth:
+        type: number
+      description:
+        type: string
+      height:
+        type: number
+      id:
+        type: integer
+      image:
+        type: string
+      price:
+        type: number
+      rating:
+        type: number
+      returnPolicy:
+        type: string
+      shipping:
+        type: string
+      stock:
+        type: integer
+      thumbnail:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+      warranty:
+        type: string
+      weight:
+        type: integer
+      width:
+        type: number
+    type: object
+  models.ProductReview:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: integer
+      productId:
+        type: integer
+      rating:
+        type: number
+      review:
+        type: string
+      reviewBy:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
   models.User:
     properties:
       age:
@@ -52,6 +110,30 @@ definitions:
       updatedAt:
         type: string
     type: object
+  service.AllReviewsResponse:
+    properties:
+      customer:
+        $ref: '#/definitions/service.Customer'
+      review:
+        $ref: '#/definitions/service.Review'
+    type: object
+  service.Customer:
+    properties:
+      age:
+        type: string
+      avatar:
+        type: string
+      email:
+        type: string
+      firstname:
+        type: string
+      id:
+        type: string
+      lastname:
+        type: string
+      middlename:
+        type: string
+    type: object
   service.LoginUserPayload:
     properties:
       email:
@@ -61,6 +143,25 @@ definitions:
     required:
     - email
     - password
+    type: object
+  service.ProductReviewPayload:
+    properties:
+      rating:
+        type: number
+      review:
+        type: string
+    required:
+    - rating
+    - review
+    type: object
+  service.ProductsResponse:
+    properties:
+      products:
+        items:
+          $ref: '#/definitions/models.Product'
+        type: array
+      totalCount:
+        type: integer
     type: object
   service.RegisterUserPayload:
     properties:
@@ -90,6 +191,19 @@ definitions:
         type: string
     required:
     - refToken
+    type: object
+  service.Review:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      rating:
+        type: number
+      review:
+        type: string
+      updatedAt:
+        type: string
     type: object
   service.UserAddressPayload:
     properties:
@@ -154,6 +268,103 @@ info:
   title: E-Commerce Backend API
   version: "1.0"
 paths:
+  /favorite/product/{productId}:
+    delete:
+      description: API for removing a product as favorite.
+      parameters:
+      - description: Product ID
+        in: path
+        name: productId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: UnMark a product as favorite.
+      tags:
+      - Products
+    post:
+      description: API for making a product as favorite.
+      parameters:
+      - description: Product ID
+        in: path
+        name: productId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Mark a product favorite.
+      tags:
+      - Products
+  /favorite/products:
+    get:
+      description: API for getting all favorite products.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.ResUserWithData'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Product'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Get all favorite products.
+      tags:
+      - Products
   /login:
     post:
       consumes:
@@ -189,6 +400,110 @@ paths:
       summary: User Login
       tags:
       - Auth
+  /product/{productId}:
+    get:
+      description: API for fetching a product.
+      parameters:
+      - description: Product ID
+        in: path
+        name: productId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.ResUserWithData'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Product'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Get a product details.
+      tags:
+      - Products
+  /product/{productId}/reviews:
+    get:
+      description: API for fetching all the reviews for a product made by multiple
+        users.
+      parameters:
+      - description: Product ID
+        in: path
+        name: productId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.ResUserWithData'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/service.AllReviewsResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Get all reviews for a product.
+      tags:
+      - Products
+  /products:
+    get:
+      description: API for fetching all products.
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: The number of products to fetch
+        in: query
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.ResUserWithData'
+            - properties:
+                data:
+                  $ref: '#/definitions/service.ProductsResponse'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Get all products.
+      tags:
+      - Products
   /register:
     post:
       consumes:
@@ -255,6 +570,146 @@ paths:
       summary: Renew Access Token
       tags:
       - Auth
+  /review/product/{productId}:
+    post:
+      consumes:
+      - application/json
+      description: API for adding a product review by user.
+      parameters:
+      - description: Product review payload
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/service.ProductReviewPayload'
+      - description: Product id
+        in: path
+        name: productId
+        required: true
+        type: string
+      - description: Bearer accessToken
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.ResUserWithData'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ProductReview'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Add a product review.
+      tags:
+      - Products
+  /review/product/{reviewId}:
+    delete:
+      consumes:
+      - application/json
+      description: API for deleting a product review by user.
+      parameters:
+      - description: Review ID
+        in: path
+        name: reviewId
+        required: true
+        type: string
+      - description: Bearer accessToken
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.ResUserWithData'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ProductReview'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Delete a product review.
+      tags:
+      - Products
+    put:
+      consumes:
+      - application/json
+      description: API for updating a product review by user.
+      parameters:
+      - description: Product review payload
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/service.ProductReviewPayload'
+      - description: Review ID
+        in: path
+        name: reviewId
+        required: true
+        type: string
+      - description: Bearer accessToken
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.ResUserWithData'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ProductReview'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Update a product review.
+      tags:
+      - Products
   /user:
     delete:
       description: API for deleting a user.
@@ -278,6 +733,10 @@ paths:
               type: object
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/utils.ResUser'
         "500":
@@ -317,6 +776,10 @@ paths:
               type: object
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/utils.ResUser'
         "500":
@@ -359,6 +822,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
         "500":
           description: Internal Server Error
           schema:
@@ -367,10 +834,50 @@ paths:
       tags:
       - User
   /user/address/{addressId}:
+    delete:
+      description: API for deleting a user address.
+      parameters:
+      - description: Address id
+        in: path
+        name: addressId
+        required: true
+        type: string
+      - description: Bearer accessToken
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.ResUserWithData'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Address'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Delete user address.
+      tags:
+      - User
     put:
       consumes:
       - application/json
-      description: API for updating a user addresse.
+      description: API for updating a user address.
       parameters:
       - description: Update address payload
         in: body
@@ -404,11 +911,53 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.ResUser'
       summary: Update user address.
+      tags:
+      - User
+  /user/addresses:
+    get:
+      description: API for fetching all user addresses.
+      parameters:
+      - description: Bearer accessToken
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.ResUserWithData'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Address'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Get all user addresses.
       tags:
       - User
 swagger: "2.0"

@@ -2,7 +2,6 @@ package service
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,21 +12,13 @@ import (
 	"github.com/kennizen/e-commerce-backend/utils"
 )
 
-type ProductReviewArgs struct {
-	Review    string
-	Rating    float32
-	ProductId string
-	UserId    string
+type ProductReviewPayload struct {
+	Review string  `validate:"required"`
+	Rating float32 `validate:"required"`
 }
 
-type ProductUpdateArgs struct {
-	ReviewId string
-	Review   string
-	Rating   float32
-}
-
-type ProductsResponce struct {
-	Data       *[]models.Product
+type ProductsResponse struct {
+	Products   *[]models.Product
 	TotalCount int
 }
 
@@ -98,16 +89,13 @@ func GetProducts(page, limit int, w http.ResponseWriter) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	encodeErr := json.NewEncoder(w).Encode(ProductsResponce{
-		Data:       &products,
-		TotalCount: count,
-	})
-
-	if encodeErr != nil {
-		log.Fatal("Error parsing JSON")
-	}
+	utils.SendJson(utils.ResUserWithData{
+		Msg: "Products",
+		Data: ProductsResponse{
+			Products:   &products,
+			TotalCount: count,
+		},
+	}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -307,16 +295,16 @@ func GetFavorites(userId string, w http.ResponseWriter) {
 
 // ---------------------------------------------------------------------------------------- //
 
-func AddProductReview(args ProductReviewArgs, w http.ResponseWriter) {
+func AddProductReview(args ProductReviewPayload, userId, productId string, w http.ResponseWriter) {
 	var id string = ""
 
 	row := db.DB.QueryRow(
-		"SELECT id FROM product_reviews WHERE review_by = $1 AND product_id = $2", args.UserId, args.ProductId,
+		"SELECT id FROM product_reviews WHERE review_by = $1 AND product_id = $2", userId, productId,
 	)
 	row.Scan(&id)
 
 	if id != "" {
-		fmt.Println("Review already added by user", args.UserId)
+		fmt.Println("Review already added by user", userId)
 		utils.SendMsg("Already reviewed the product", http.StatusBadRequest, w)
 		return
 	}
@@ -331,7 +319,7 @@ func AddProductReview(args ProductReviewArgs, w http.ResponseWriter) {
 
 	row1 := trx.QueryRow(
 		"INSERT INTO product_reviews (review_by, product_id, review, rating) VALUES ($1, $2, $3, $4) RETURNING *",
-		args.UserId, args.ProductId, args.Review, args.Rating,
+		userId, productId, args.Review, args.Rating,
 	)
 
 	var proReview models.ProductReview
@@ -362,14 +350,14 @@ func AddProductReview(args ProductReviewArgs, w http.ResponseWriter) {
 
 // ---------------------------------------------------------------------------------------- //
 
-func UpdateProductReview(args ProductUpdateArgs, w http.ResponseWriter) {
+func UpdateProductReview(args ProductReviewPayload, userId, reviewId string, w http.ResponseWriter) {
 	var id string = ""
 
-	row := db.DB.QueryRow("SELECT id FROM product_reviews WHERE id = $1", args.ReviewId)
+	row := db.DB.QueryRow("SELECT id FROM product_reviews WHERE id = $1", reviewId)
 	row.Scan(&id)
 
 	if id == "" {
-		fmt.Println("Review not found to update", args.ReviewId)
+		fmt.Println("Review not found to update", reviewId)
 		utils.SendMsg("Review not found to update", http.StatusBadRequest, w)
 		return
 	}
@@ -383,8 +371,8 @@ func UpdateProductReview(args ProductUpdateArgs, w http.ResponseWriter) {
 	}
 
 	row1 := trx.QueryRow(
-		"UPDATE product_reviews SET review = $1, rating = $2, updated_at = $3 WHERE id = $4 RETURNING *",
-		args.Review, args.Rating, time.Now().UTC().Format(time.RFC3339), args.ReviewId,
+		"UPDATE product_reviews SET review = $1, rating = $2, updated_at = $3 WHERE id = $4 AND review_by = $5 RETURNING *",
+		args.Review, args.Rating, time.Now().UTC().Format(time.RFC3339), reviewId, userId,
 	)
 
 	var proReview models.ProductReview
@@ -415,10 +403,10 @@ func UpdateProductReview(args ProductUpdateArgs, w http.ResponseWriter) {
 
 // ---------------------------------------------------------------------------------------- //
 
-func DeleteProductReview(reviewId string, w http.ResponseWriter) {
+func DeleteProductReview(reviewId, userId string, w http.ResponseWriter) {
 	var id string = ""
 
-	row := db.DB.QueryRow("SELECT id FROM product_reviews WHERE id = $1", reviewId)
+	row := db.DB.QueryRow("SELECT id FROM product_reviews WHERE id = $1 AND review_by = $2", reviewId, userId)
 	row.Scan(&id)
 
 	if id == "" {
@@ -435,7 +423,7 @@ func DeleteProductReview(reviewId string, w http.ResponseWriter) {
 		return
 	}
 
-	delRow := trx.QueryRow("DELETE FROM product_reviews WHERE id = $1 RETURNING *", reviewId)
+	delRow := trx.QueryRow("DELETE FROM product_reviews WHERE id = $1 AND review_by = $2 RETURNING *", reviewId, userId)
 
 	var proReview models.ProductReview
 
@@ -483,7 +471,7 @@ type Customer struct {
 	Avatar     string
 }
 
-type Data struct {
+type AllReviewsResponse struct {
 	Review   Review
 	Customer Customer
 }
@@ -515,7 +503,7 @@ func GetProductReviewsByProductId(productId string, w http.ResponseWriter) {
 		return
 	}
 
-	var resp []Data
+	var resp []AllReviewsResponse
 	isEmpty := true
 
 	for rows.Next() {
@@ -542,7 +530,7 @@ func GetProductReviewsByProductId(productId string, w http.ResponseWriter) {
 			log.Fatalln("Error scanning row", err.Error())
 		}
 
-		resp = append(resp, Data{
+		resp = append(resp, AllReviewsResponse{
 			Review:   rev,
 			Customer: cust,
 		})
@@ -556,11 +544,8 @@ func GetProductReviewsByProductId(productId string, w http.ResponseWriter) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	encodeErr := json.NewEncoder(w).Encode(resp)
-
-	if encodeErr != nil {
-		log.Fatal("Error parsing JSON")
-	}
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "No reviews found",
+		Data: resp,
+	}, http.StatusOK, w)
 }
