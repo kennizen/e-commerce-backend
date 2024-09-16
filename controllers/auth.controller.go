@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	service "github.com/kennizen/e-commerce-backend/services"
 	"github.com/kennizen/e-commerce-backend/utils"
@@ -16,7 +15,7 @@ import (
 // @Accept       json
 // @Produce      json
 // @Param        user body service.LoginUserPayload true "Login credentials"
-// @Success      200  {object} utils.ResUserWithData
+// @Success      200  {object} utils.ResUserWithData{data=lib.Tokens}
 // @Failure      400  {object} utils.ResUser
 // @Failure      500  {object} utils.ResUser
 // @Router       /login [post]
@@ -82,25 +81,21 @@ func RegisterController(w http.ResponseWriter, r *http.Request) {
 // @Tags         Auth
 // @Accept       json
 // @Produce      json
-// @Param        Authorization header string true "Bearer refreshToken"
-// @Success      201  {object} utils.ResUserWithData
+// @Param        token body service.RenewAccessTokenPayload true "Renew access token payload"
+// @Success      201  {object} utils.ResUserWithData{data=lib.Tokens}
 // @Failure      401  {object} utils.ResUser
 // @Failure      500  {object} utils.ResUser
 // @Router       /renew-access-token [get]
 func RenewAccessToken(w http.ResponseWriter, r *http.Request) {
-	token := r.Header.Get("Authorization")
+	var token service.RenewAccessTokenPayload
 
-	if token == "" {
-		utils.SendMsg("Invalid token", http.StatusUnauthorized, w)
+	err := json.NewDecoder(r.Body).Decode(&token)
+
+	if err != nil {
+		fmt.Println("Invalid payload", err.Error())
+		utils.SendMsg("Invalid payload", http.StatusBadRequest, w)
 		return
 	}
 
-	bearerToken := strings.Split(token, " ")
-
-	if bearerToken[0] != "Bearer" && bearerToken[1] == "" {
-		utils.SendMsg("Invalid token", http.StatusUnauthorized, w)
-		return
-	}
-
-	service.RenewAccessToken(bearerToken[1], w)
+	service.RenewAccessToken(token, w)
 }

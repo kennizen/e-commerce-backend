@@ -2,6 +2,7 @@ package service
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -23,6 +24,11 @@ type ProductUpdateArgs struct {
 	ReviewId string
 	Review   string
 	Rating   float32
+}
+
+type ProductsResponce struct {
+	Data       *[]models.Product
+	TotalCount int
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -85,11 +91,23 @@ func GetProducts(page, limit int, w http.ResponseWriter) {
 	}
 
 	if isEmpty {
-		utils.SendJson(map[string][]any{"data": make([]any, 0)}, http.StatusOK, w)
+		utils.SendJson(utils.ResUserWithData{
+			Msg:  "No products found",
+			Data: make([]any, 0),
+		}, http.StatusOK, w)
 		return
 	}
 
-	utils.SendJson(map[string]any{"data": products, "totalCount": count}, http.StatusOK, w)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	encodeErr := json.NewEncoder(w).Encode(ProductsResponce{
+		Data:       &products,
+		TotalCount: count,
+	})
+
+	if encodeErr != nil {
+		log.Fatal("Error parsing JSON")
+	}
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -130,7 +148,10 @@ func GetProduct(id int, w http.ResponseWriter) {
 		log.Fatalln("Error scanning row", err.Error())
 	}
 
-	utils.SendJson(map[string]any{"data": product}, http.StatusOK, w)
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Product found",
+		Data: product,
+	}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -169,7 +190,7 @@ func MarkFavorite(userId, productId string, w http.ResponseWriter) {
 
 	rows.Close()
 
-	utils.SendJson(map[string]string{"data": "Product added to favorites"}, http.StatusOK, w)
+	utils.SendMsg("Product added to favorites", http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -210,7 +231,7 @@ func UnMarkFavorite(userId, productId string, w http.ResponseWriter) {
 		return
 	}
 
-	utils.SendJson(map[string]string{"data": "Product removed from favorites"}, http.StatusOK, w)
+	utils.SendMsg("Product removed from favorites", http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -278,7 +299,10 @@ func GetFavorites(userId string, w http.ResponseWriter) {
 		products = append(products, product)
 	}
 
-	utils.SendJson(map[string][]models.Product{"data": products}, http.StatusOK, w)
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Favorites found",
+		Data: products,
+	}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -330,9 +354,9 @@ func AddProductReview(args ProductReviewArgs, w http.ResponseWriter) {
 		return
 	}
 
-	utils.SendJson(map[string]interface{}{
-		"message": "Product review added",
-		"data":    proReview,
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Product review added",
+		Data: proReview,
 	}, http.StatusOK, w)
 }
 
@@ -383,9 +407,9 @@ func UpdateProductReview(args ProductUpdateArgs, w http.ResponseWriter) {
 		return
 	}
 
-	utils.SendJson(map[string]interface{}{
-		"message": "Product review updated",
-		"data":    proReview,
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Product review updated",
+		Data: proReview,
 	}, http.StatusOK, w)
 }
 
@@ -433,13 +457,36 @@ func DeleteProductReview(reviewId string, w http.ResponseWriter) {
 		return
 	}
 
-	utils.SendJson(map[string]interface{}{
-		"message": "Product review deleted",
-		"data":    proReview,
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Product review deleted",
+		Data: proReview,
 	}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
+
+type Review struct {
+	Id        string
+	Review    string
+	Rating    float32
+	CreatedAt string
+	UpdatedAt string
+}
+
+type Customer struct {
+	Id         string
+	Firstname  string
+	Middlename string
+	Lastname   string
+	Email      string
+	Age        string
+	Avatar     string
+}
+
+type Data struct {
+	Review   Review
+	Customer Customer
+}
 
 func GetProductReviewsByProductId(productId string, w http.ResponseWriter) {
 	rows, err := db.DB.Query(
@@ -466,29 +513,6 @@ func GetProductReviewsByProductId(productId string, w http.ResponseWriter) {
 		fmt.Println("Failed to execute query")
 		utils.SendMsg("Server error", http.StatusInternalServerError, w)
 		return
-	}
-
-	type Review struct {
-		Id        string
-		Review    string
-		Rating    float32
-		CreatedAt string
-		UpdatedAt string
-	}
-
-	type Customer struct {
-		Id         string
-		Firstname  string
-		Middlename string
-		Lastname   string
-		Email      string
-		Age        string
-		Avatar     string
-	}
-
-	type Data struct {
-		Review   Review
-		Customer Customer
 	}
 
 	var resp []Data
@@ -525,9 +549,18 @@ func GetProductReviewsByProductId(productId string, w http.ResponseWriter) {
 	}
 
 	if isEmpty {
-		utils.SendJson(map[string][]any{"data": make([]any, 0)}, http.StatusOK, w)
+		utils.SendJson(utils.ResUserWithData{
+			Msg:  "No reviews found",
+			Data: make([]any, 0),
+		}, http.StatusOK, w)
 		return
 	}
 
-	utils.SendJson(resp, http.StatusOK, w)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	encodeErr := json.NewEncoder(w).Encode(resp)
+
+	if encodeErr != nil {
+		log.Fatal("Error parsing JSON")
+	}
 }

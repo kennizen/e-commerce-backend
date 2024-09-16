@@ -75,9 +75,9 @@ func UpdateUserDetails(args UserDetailsPayload, userId string, w http.ResponseWr
 		return
 	}
 
-	utils.SendJson(map[string]interface{}{
-		"message": "User updated",
-		"data":    user,
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "User updated",
+		Data: user,
 	}, http.StatusOK, w)
 }
 
@@ -128,9 +128,9 @@ func DeleteUser(userId string, w http.ResponseWriter) {
 		return
 	}
 
-	utils.SendJson(map[string]interface{}{
-		"message": "User deleted",
-		"data":    user,
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "User deleted",
+		Data: user,
 	}, http.StatusOK, w)
 }
 
@@ -172,9 +172,9 @@ func AddAddress(args UserAddressPayload, userId string, w http.ResponseWriter) {
 		return
 	}
 
-	utils.SendJson(map[string]interface{}{
-		"message": "Address added",
-		"data":    address,
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Address added",
+		Data: address,
 	}, http.StatusOK, w)
 }
 
@@ -229,9 +229,9 @@ func UpdateAddress(args UserAddressPayload, addressId string, w http.ResponseWri
 		return
 	}
 
-	utils.SendJson(map[string]interface{}{
-		"message": "Address updated",
-		"data":    address,
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Address updated",
+		Data: address,
 	}, http.StatusOK, w)
 }
 
@@ -281,9 +281,9 @@ func DeleteAddress(addressId string, userId string, w http.ResponseWriter) {
 		return
 	}
 
-	utils.SendJson(map[string]interface{}{
-		"message": "Address deleted",
-		"data":    address,
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Address deleted",
+		Data: address,
 	}, http.StatusOK, w)
 }
 
@@ -326,9 +326,15 @@ func GetAddresses(userId string, w http.ResponseWriter) {
 	}
 
 	if isEmpty {
-		utils.SendJson(map[string][]any{"data": make([]any, 0)}, http.StatusOK, w)
+		utils.SendJson(utils.ResUserWithData{
+			Msg:  "No addresses found",
+			Data: make([]any, 0),
+		}, http.StatusOK, w)
 		return
 	}
 
-	utils.SendJson(map[string]any{"data": addresses}, http.StatusOK, w)
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Addresses",
+		Data: addresses,
+	}, http.StatusOK, w)
 }

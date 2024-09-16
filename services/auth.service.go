@@ -28,6 +28,10 @@ type LoginUserPayload struct {
 	Password string `validate:"required"`
 }
 
+type RenewAccessTokenPayload struct {
+	RefToken string `validate:"required"`
+}
+
 func RegisterUser(arg RegisterUserPayload, w http.ResponseWriter) {
 	var hashed_password string
 
@@ -134,8 +138,8 @@ func LoginUser(arg LoginUserPayload, w http.ResponseWriter) {
 
 // ---------------------------------------------------------------------------------------- //
 
-func RenewAccessToken(refToken string, w http.ResponseWriter) {
-	claims, isValid := lib.ValidateToken(refToken, os.Getenv("JWT_REFRESH_TOKEN_SECRET"))
+func RenewAccessToken(refToken RenewAccessTokenPayload, w http.ResponseWriter) {
+	claims, isValid := lib.ValidateToken(refToken.RefToken, os.Getenv("JWT_REFRESH_TOKEN_SECRET"))
 
 	if !isValid {
 		utils.SendMsg("Invalid token", http.StatusUnauthorized, w)

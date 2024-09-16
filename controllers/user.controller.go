@@ -11,17 +11,17 @@ import (
 	"github.com/kennizen/e-commerce-backend/utils"
 )
 
-// @Summary      Update user details
-// @Description  API for updating users details
+// @Summary      Update user details.
+// @Description  API for updating users details.
 // @Tags         User
 // @Accept       json
 // @Produce      json
 // @Param        user body service.UserDetailsPayload true "Update user details payload"
 // @Param        Authorization header string true "Bearer accessToken"
-// @Success      200  {object} map[string]any{"message": "User updated", "data": models.User}
+// @Success      200  {object} utils.ResUserWithData{data=models.User}
 // @Failure      400  {object} utils.ResUser
 // @Failure      500  {object} utils.ResUser
-// @Router       /register [post]
+// @Router       /user [patch]
 func UpdateUserDetails(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value(middlewares.ContextKey("userID"))
 
@@ -61,6 +61,15 @@ func UpdateUserDetails(w http.ResponseWriter, r *http.Request) {
 
 // ---------------------------------------------------------------------------------------- //
 
+// @Summary      Delete user.
+// @Description  API for deleting a user.
+// @Tags         User
+// @Produce      json
+// @Param        Authorization header string true "Bearer accessToken"
+// @Success      200  {object} utils.ResUserWithData{data=models.User}
+// @Failure      400  {object} utils.ResUser
+// @Failure      500  {object} utils.ResUser
+// @Router       /user [delete]
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value(middlewares.ContextKey("userID"))
 
@@ -75,6 +84,17 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 // ---------------------------------------------------------------------------------------- //
 
+// @Summary      Add user address.
+// @Description  API for adding user addresse used as delivery address.
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Param        user body service.UserAddressPayload true "Add address payload"
+// @Param        Authorization header string true "Bearer accessToken"
+// @Success      200  {object} utils.ResUserWithData{data=models.Address}
+// @Failure      400  {object} utils.ResUser
+// @Failure      500  {object} utils.ResUser
+// @Router       /user/address [post]
 func AddAddress(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value(middlewares.ContextKey("userID"))
 
@@ -113,6 +133,18 @@ func AddAddress(w http.ResponseWriter, r *http.Request) {
 
 // ---------------------------------------------------------------------------------------- //
 
+// @Summary      Update user address.
+// @Description  API for updating a user addresse.
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Param        user body service.UserAddressPayload true "Update address payload"
+// @Param        addressId path string true "Address id"
+// @Param        Authorization header string true "Bearer accessToken"
+// @Success      200  {object} utils.ResUserWithData{data=models.Address}
+// @Failure      400  {object} utils.ResUser
+// @Failure      500  {object} utils.ResUser
+// @Router       /user/address/{addressId} [put]
 func UpdateAddress(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("addressId")
 

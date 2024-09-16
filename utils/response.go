@@ -11,8 +11,8 @@ type ResUser struct {
 }
 
 type ResUserWithData struct {
-	Msg  string `json:"message"`
-	Data any    `json:"data"`
+	Msg  string      `json:"message"`
+	Data interface{} `json:"data"`
 }
 
 func NewResUser(msg string) *ResUser {
