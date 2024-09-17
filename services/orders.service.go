@@ -96,6 +96,35 @@ func PlaceOrder(args OrdersPayload, userId string, w http.ResponseWriter) {
 
 // ---------------------------------------------------------------------------------------- //
 
+type OrderRes struct {
+	OrderId       string
+	Quantity      float32
+	OrderTime     string
+	PaymentMethod string
+	PaymentStatus string
+	PaymentTime   string
+}
+
+type ProductRes struct {
+	ProductId   string
+	Title       string
+	Description string
+	Category    string
+	Price       float32
+	Image       string
+	Thumbnail   string
+}
+
+type AddressRes struct {
+	UserAddressPayload
+}
+
+type AllOrdersResponse struct {
+	Order   OrderRes
+	Product ProductRes
+	Address AddressRes
+}
+
 func GetOrders(userId string, w http.ResponseWriter) {
 	rows, err := db.DB.Query(`
 		select
@@ -133,37 +162,8 @@ func GetOrders(userId string, w http.ResponseWriter) {
 
 	defer rows.Close()
 
-	type OrderRes struct {
-		OrderId       string
-		Quantity      float32
-		OrderTime     string
-		PaymentMethod string
-		PaymentStatus string
-		PaymentTime   string
-	}
-
-	type ProductRes struct {
-		ProductId   string
-		Title       string
-		Description string
-		Category    string
-		Price       float32
-		Image       string
-		Thumbnail   string
-	}
-
-	type AddressRes struct {
-		UserAddressPayload
-	}
-
-	type Data struct {
-		Order   OrderRes
-		Product ProductRes
-		Address AddressRes
-	}
-
-	var data Data
-	var resp []Data
+	var data AllOrdersResponse
+	var resp []AllOrdersResponse
 	isEmpty := true
 
 	for rows.Next() {

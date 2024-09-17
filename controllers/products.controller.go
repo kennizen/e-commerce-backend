@@ -14,7 +14,7 @@ import (
 
 // @Summary      Get all products.
 // @Description  API for fetching all products.
-// @Tags         Products
+// @Tags         Product
 // @Produce      json
 // @Param        page query int true "Page number"
 // @Param        limit query int true "The number of products to fetch"
@@ -52,7 +52,7 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 
 // @Summary      Get a product details.
 // @Description  API for fetching a product.
-// @Tags         Products
+// @Tags         Product
 // @Produce      json
 // @Param        productId path string true "Product ID"
 // @Success      200  {object} utils.ResUserWithData{data=models.Product}
@@ -78,7 +78,7 @@ func GetProduct(w http.ResponseWriter, r *http.Request) {
 
 // @Summary      Mark a product favorite.
 // @Description  API for making a product as favorite.
-// @Tags         Products
+// @Tags         Product
 // @Produce      json
 // @Param        productId path string true "Product ID"
 // @Success      200  {object} utils.ResUser
@@ -113,7 +113,7 @@ func MarkFavorite(w http.ResponseWriter, r *http.Request) {
 
 // @Summary      UnMark a product as favorite.
 // @Description  API for removing a product as favorite.
-// @Tags         Products
+// @Tags         Product
 // @Produce      json
 // @Param        productId path string true "Product ID"
 // @Success      200  {object} utils.ResUser
@@ -141,7 +141,7 @@ func UnMarkFavorite(w http.ResponseWriter, r *http.Request) {
 
 // @Summary      Get all favorite products.
 // @Description  API for getting all favorite products.
-// @Tags         Products
+// @Tags         Product
 // @Produce      json
 // @Success      200  {object} utils.ResUserWithData{data=[]models.Product}
 // @Failure      400  {object} utils.ResUser
@@ -164,7 +164,7 @@ func GetFavorites(w http.ResponseWriter, r *http.Request) {
 
 // @Summary      Add a product review.
 // @Description  API for adding a product review by user.
-// @Tags         Products
+// @Tags         Product
 // @Accept       json
 // @Produce      json
 // @Param        user body service.ProductReviewPayload true "Product review payload"
@@ -222,7 +222,7 @@ func AddProductReview(w http.ResponseWriter, r *http.Request) {
 
 // @Summary      Update a product review.
 // @Description  API for updating a product review by user.
-// @Tags         Products
+// @Tags         Product
 // @Accept       json
 // @Produce      json
 // @Param        user body service.ProductReviewPayload true "Product review payload"
@@ -280,7 +280,7 @@ func UpdateProductReview(w http.ResponseWriter, r *http.Request) {
 
 // @Summary      Delete a product review.
 // @Description  API for deleting a product review by user.
-// @Tags         Products
+// @Tags         Product
 // @Accept       json
 // @Produce      json
 // @Param        reviewId path string true "Review ID"
@@ -316,7 +316,7 @@ func DeleteProductReview(w http.ResponseWriter, r *http.Request) {
 
 // @Summary      Get all reviews for a product.
 // @Description  API for fetching all the reviews for a product made by multiple users.
-// @Tags         Products
+// @Tags         Product
 // @Produce      json
 // @Param        productId path string true "Product ID"
 // @Success      200  {object} utils.ResUserWithData{data=[]service.AllReviewsResponse}

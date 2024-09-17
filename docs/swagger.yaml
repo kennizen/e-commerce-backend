@@ -110,6 +110,41 @@ definitions:
       updatedAt:
         type: string
     type: object
+  service.AddToCartPayload:
+    properties:
+      quantity:
+        type: integer
+    required:
+    - quantity
+    type: object
+  service.AddressRes:
+    properties:
+      address:
+        type: string
+      country:
+        type: string
+      phoneNo:
+        type: string
+      state:
+        type: string
+      zipcode:
+        type: string
+    required:
+    - address
+    - country
+    - phoneNo
+    - state
+    - zipcode
+    type: object
+  service.AllOrdersResponse:
+    properties:
+      address:
+        $ref: '#/definitions/service.AddressRes'
+      order:
+        $ref: '#/definitions/service.OrderRes'
+      product:
+        $ref: '#/definitions/service.ProductRes'
+    type: object
   service.AllReviewsResponse:
     properties:
       customer:
@@ -134,6 +169,49 @@ definitions:
       middlename:
         type: string
     type: object
+  service.GetCartResponse:
+    properties:
+      availability:
+        type: string
+      category:
+        type: string
+      createdAt:
+        type: string
+      depth:
+        type: number
+      description:
+        type: string
+      height:
+        type: number
+      id:
+        type: integer
+      image:
+        type: string
+      price:
+        type: number
+      quantity:
+        type: integer
+      rating:
+        type: number
+      returnPolicy:
+        type: string
+      shipping:
+        type: string
+      stock:
+        type: integer
+      thumbnail:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+      warranty:
+        type: string
+      weight:
+        type: integer
+      width:
+        type: number
+    type: object
   service.LoginUserPayload:
     properties:
       email:
@@ -143,6 +221,66 @@ definitions:
     required:
     - email
     - password
+    type: object
+  service.OrderRes:
+    properties:
+      orderId:
+        type: string
+      orderTime:
+        type: string
+      paymentMethod:
+        type: string
+      paymentStatus:
+        type: string
+      paymentTime:
+        type: string
+      quantity:
+        type: number
+    type: object
+  service.OrdersPayload:
+    properties:
+      addressUsed:
+        type: string
+      paymentMethod:
+        enum:
+        - ONLINE
+        - COD
+        type: string
+      products:
+        items:
+          $ref: '#/definitions/service.Product'
+        type: array
+    required:
+    - addressUsed
+    - paymentMethod
+    type: object
+  service.Product:
+    properties:
+      productId:
+        type: string
+      quantity:
+        minimum: 1
+        type: integer
+    required:
+    - productId
+    - quantity
+    type: object
+  service.ProductRes:
+    properties:
+      category:
+        type: string
+      description:
+        type: string
+      image:
+        type: string
+      price:
+        type: number
+      productId:
+        type: string
+      thumbnail:
+        type: string
+      title:
+        type: string
     type: object
   service.ProductReviewPayload:
     properties:
@@ -268,6 +406,166 @@ info:
   title: E-Commerce Backend API
   version: "1.0"
 paths:
+  /cart:
+    get:
+      description: API for fetching all the cart products.
+      parameters:
+      - description: Bearer accessToken
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.ResUserWithData'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/service.GetCartResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Get all cart products.
+      tags:
+      - Cart
+  /cart/product/{productId}:
+    delete:
+      description: API for removing a product from cart.
+      parameters:
+      - description: Bearer accessToken
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Product ID
+        in: path
+        name: productId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Remove product from cart.
+      tags:
+      - Cart
+    post:
+      consumes:
+      - application/json
+      description: API for adding an product the cart.
+      parameters:
+      - description: Bearer accessToken
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Product ID
+        in: path
+        name: productId
+        required: true
+        type: string
+      - description: Cart payload
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/service.AddToCartPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Add product to cart.
+      tags:
+      - Cart
+    put:
+      consumes:
+      - application/json
+      description: API for updating the quantity for a cart product.
+      parameters:
+      - description: Bearer accessToken
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Product ID
+        in: path
+        name: productId
+        required: true
+        type: string
+      - description: Cart payload
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/service.AddToCartPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Update a cart product.
+      tags:
+      - Cart
   /favorite/product/{productId}:
     delete:
       description: API for removing a product as favorite.
@@ -298,7 +596,7 @@ paths:
             $ref: '#/definitions/utils.ResUser'
       summary: UnMark a product as favorite.
       tags:
-      - Products
+      - Product
     post:
       description: API for making a product as favorite.
       parameters:
@@ -332,7 +630,7 @@ paths:
             $ref: '#/definitions/utils.ResUser'
       summary: Mark a product favorite.
       tags:
-      - Products
+      - Product
   /favorite/products:
     get:
       description: API for getting all favorite products.
@@ -364,7 +662,7 @@ paths:
             $ref: '#/definitions/utils.ResUser'
       summary: Get all favorite products.
       tags:
-      - Products
+      - Product
   /login:
     post:
       consumes:
@@ -400,6 +698,83 @@ paths:
       summary: User Login
       tags:
       - Auth
+  /order:
+    post:
+      consumes:
+      - application/json
+      description: API for placing an order with the products in the cart.
+      parameters:
+      - description: Bearer accessToken
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Order payload
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/service.OrdersPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Place an order.
+      tags:
+      - Order
+  /orders:
+    get:
+      description: API for fetching all the orders of a user.
+      parameters:
+      - description: Bearer accessToken
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.ResUserWithData'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/service.AllOrdersResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ResUser'
+      summary: Get all orders of a user.
+      tags:
+      - Order
   /product/{productId}:
     get:
       description: API for fetching a product.
@@ -435,7 +810,7 @@ paths:
             $ref: '#/definitions/utils.ResUser'
       summary: Get a product details.
       tags:
-      - Products
+      - Product
   /product/{productId}/reviews:
     get:
       description: API for fetching all the reviews for a product made by multiple
@@ -470,7 +845,7 @@ paths:
             $ref: '#/definitions/utils.ResUser'
       summary: Get all reviews for a product.
       tags:
-      - Products
+      - Product
   /products:
     get:
       description: API for fetching all products.
@@ -503,7 +878,7 @@ paths:
             $ref: '#/definitions/utils.ResUser'
       summary: Get all products.
       tags:
-      - Products
+      - Product
   /register:
     post:
       consumes:
@@ -618,7 +993,7 @@ paths:
             $ref: '#/definitions/utils.ResUser'
       summary: Add a product review.
       tags:
-      - Products
+      - Product
   /review/product/{reviewId}:
     delete:
       consumes:
@@ -661,7 +1036,7 @@ paths:
             $ref: '#/definitions/utils.ResUser'
       summary: Delete a product review.
       tags:
-      - Products
+      - Product
     put:
       consumes:
       - application/json
@@ -709,7 +1084,7 @@ paths:
             $ref: '#/definitions/utils.ResUser'
       summary: Update a product review.
       tags:
-      - Products
+      - Product
   /user:
     delete:
       description: API for deleting a user.

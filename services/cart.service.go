@@ -11,16 +11,14 @@ import (
 	"github.com/kennizen/e-commerce-backend/utils"
 )
 
-type CartArgs struct {
-	UserId    string
-	ProductId string
-	Quantity  int
+type AddToCartPayload struct {
+	Quantity int `validate:"required,gte="`
 }
 
-func AddToCart(args CartArgs, w http.ResponseWriter) {
+func AddToCart(args AddToCartPayload, userId, productId string, w http.ResponseWriter) {
 	var id string = ""
 
-	row := db.DB.QueryRow("SELECT id FROM cart WHERE customer_id = $1 AND product_id = $2", args.UserId, args.ProductId)
+	row := db.DB.QueryRow("SELECT id FROM cart WHERE customer_id = $1 AND product_id = $2", userId, productId)
 	row.Scan(&id)
 
 	if id != "" {
@@ -39,7 +37,7 @@ func AddToCart(args CartArgs, w http.ResponseWriter) {
 
 	_, err := trx.Exec(
 		"INSERT INTO cart (customer_id, product_id, quantity) VALUES ($1, $2, $3)",
-		args.UserId, args.ProductId, args.Quantity,
+		userId, productId, args.Quantity,
 	)
 
 	if err != nil {
@@ -102,18 +100,15 @@ func RemoveFromCart(userId, productId string, w http.ResponseWriter) {
 
 // ---------------------------------------------------------------------------------------- //
 
-func UpdateCartItems(args CartArgs, w http.ResponseWriter) {
-	var result struct {
-		Id       string
-		Quantity int
-	}
+func UpdateCartItems(args AddToCartPayload, userId, productId string, w http.ResponseWriter) {
+	var id string
 
 	row := db.DB.QueryRow(
-		"SELECT id, quantity FROM cart WHERE customer_id = $1 AND product_id = $2", args.UserId, args.ProductId,
+		"SELECT id FROM cart WHERE customer_id = $1 AND product_id = $2", userId, productId,
 	)
-	row.Scan(&result.Id, &result.Quantity)
+	row.Scan(&id)
 
-	if result.Id == "" {
+	if id == "" {
 		fmt.Println("Product not found to update")
 		utils.SendMsg("Product not found to update", http.StatusBadRequest, w)
 		return
@@ -129,7 +124,7 @@ func UpdateCartItems(args CartArgs, w http.ResponseWriter) {
 
 	_, err := trx.Exec(
 		"UPDATE cart SET quantity = $1, updated_at = $2 WHERE id = $3",
-		result.Quantity+args.Quantity, time.Now().UTC().Format(time.RFC3339), result.Id,
+		args.Quantity, time.Now().UTC().Format(time.RFC3339), id,
 	)
 
 	if err != nil {
@@ -150,6 +145,11 @@ func UpdateCartItems(args CartArgs, w http.ResponseWriter) {
 }
 
 // ---------------------------------------------------------------------------------------- //
+
+type GetCartResponse struct {
+	models.Product
+	Quantity int
+}
 
 func GetCart(userId string, w http.ResponseWriter) {
 	rows, err := db.DB.Query(
@@ -184,15 +184,12 @@ func GetCart(userId string, w http.ResponseWriter) {
 		return
 	}
 
-	type Data struct {
-		models.Product
-		Quantity int
-	}
-
-	var res []Data = make([]Data, 0)
-	var product Data
+	var res []GetCartResponse = make([]GetCartResponse, 0)
+	var product GetCartResponse
+	isEmpty := true
 
 	for rows.Next() {
+		isEmpty = false
 		err := rows.Scan(
 			&product.Id,
 			&product.Title,
@@ -219,6 +216,11 @@ func GetCart(userId string, w http.ResponseWriter) {
 		}
 
 		res = append(res, product)
+	}
+
+	if isEmpty {
+		utils.SendJson(utils.ResUserWithData{Msg: "Cart empty", Data: make([]any, 0)}, http.StatusOK, w)
+		return
 	}
 
 	utils.SendJson(utils.ResUserWithData{Msg: "Cart data", Data: res}, http.StatusOK, w)
