@@ -181,3 +181,5 @@ func GetCart(w http.ResponseWriter, r *http.Request) {
 
 	service.GetCart(userId.(string), w)
 }
+
+// update the controllers to send data

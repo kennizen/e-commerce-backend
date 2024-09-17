@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type Claims struct {
@@ -26,7 +27,7 @@ func NewClaims(id, email string, expiry time.Time) *Claims {
 		Email: email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiry),
-			ID:        id,
+			ID:        uuid.New().String(),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}

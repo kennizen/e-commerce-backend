@@ -89,21 +89,20 @@ func RegisterUser(arg RegisterUserPayload, w http.ResponseWriter) {
 
 // ---------------------------------------------------------------------------------------- //
 
-func LoginUser(arg LoginUserPayload, w http.ResponseWriter) {
+func LoginUser(payload LoginUserPayload) (*lib.Tokens, error) {
 	// check if user exists and correct password
 	var hashed_password string
 
 	h := sha256.New()
-	h.Write([]byte(arg.Password))
+	h.Write([]byte(payload.Password))
 
 	hashed_password = hex.EncodeToString(h.Sum(nil))
 
-	rows, err := db.DB.Query("SELECT id, email FROM customers WHERE email = $1 and hashed_password = $2", arg.Email, hashed_password)
+	rows, err := db.DB.Query("SELECT id, email FROM customers WHERE email = $1 and hashed_password = $2", payload.Email, hashed_password)
 
 	if err != nil {
 		fmt.Println("Failed to query customers", err.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return &lib.Tokens{}, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	defer rows.Close()
@@ -121,38 +120,89 @@ func LoginUser(arg LoginUserPayload, w http.ResponseWriter) {
 	}
 
 	if isEmpty {
-		utils.SendMsg("User not found", http.StatusNotFound, w)
-		return
+		return &lib.Tokens{}, utils.NewHttpError("User not found", http.StatusNotFound)
 	}
 
 	// all success then send access and refresh token
 	tokens, err1 := lib.GenerateTokens(strconv.Itoa(id), email)
 
 	if err1 != nil {
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return &lib.Tokens{}, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
-	utils.SendJson(utils.ResUserWithData{Msg: "Tokens generated", Data: tokens}, http.StatusOK, w)
+	claims, _ := lib.ValidateToken(tokens.RefreshToken, os.Getenv("JWT_REFRESH_TOKEN_SECRET"))
+
+	upErr := updateRefTokenId(claims.ID, claims.Email)
+
+	if upErr != nil {
+		fmt.Println("Error in transaction", upErr.Error())
+		return &lib.Tokens{}, utils.NewHttpError("Server error", http.StatusInternalServerError)
+	}
+
+	return &tokens, nil
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func RenewAccessToken(refToken RenewAccessTokenPayload, w http.ResponseWriter) {
+func RenewAccessToken(refToken RenewAccessTokenPayload) (*lib.Tokens, error) {
 	claims, isValid := lib.ValidateToken(refToken.RefToken, os.Getenv("JWT_REFRESH_TOKEN_SECRET"))
 
 	if !isValid {
-		utils.SendMsg("Invalid token", http.StatusUnauthorized, w)
-		return
+		return &lib.Tokens{}, utils.NewHttpError("Invalid token", http.StatusUnauthorized)
+	}
+
+	var refTokenId string
+
+	row := db.DB.QueryRow("SELECT reftoken_id FROM customers WHERE email = $1", claims.Email)
+	row.Scan(&refTokenId)
+
+	if refTokenId == "" || refTokenId != claims.ID {
+		fmt.Println("Invalid refresh token")
+		return &lib.Tokens{}, utils.NewHttpError("Invalid refresh token", http.StatusUnauthorized)
 	}
 
 	newTokens, err := lib.GenerateTokens(claims.Id, claims.Email)
 
-	if err != nil {
-		fmt.Println("error in generating new tokens")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+	newClaims, _ := lib.ValidateToken(newTokens.RefreshToken, os.Getenv("JWT_REFRESH_TOKEN_SECRET"))
+
+	upErr := updateRefTokenId(newClaims.ID, newClaims.Email)
+
+	if upErr != nil {
+		fmt.Println("Error in transaction", upErr.Error())
+		return &lib.Tokens{}, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
-	utils.SendJson(utils.ResUserWithData{Msg: "Tokens generated", Data: newTokens}, http.StatusCreated, w)
+	if err != nil {
+		fmt.Println("error in generating new tokens")
+		return &lib.Tokens{}, utils.NewHttpError("Server error", http.StatusInternalServerError)
+	}
+
+	return &newTokens, nil
+}
+
+// ---------------------------------------------------------------------------------------- //
+
+func updateRefTokenId(id, email string) error {
+	trx, trxErr := db.DB.Begin()
+
+	if trxErr != nil {
+		fmt.Println("Error in transaction", trxErr.Error())
+		return utils.NewHttpError("Server error", http.StatusInternalServerError)
+	}
+
+	_, execErr := trx.Exec("UPDATE customers SET reftoken_id = $1 WHERE email = $2", id, email)
+
+	if execErr != nil {
+		fmt.Println("Failed to update customers")
+		return utils.NewHttpError("Server error", http.StatusInternalServerError)
+	}
+
+	comErr := trx.Commit()
+
+	if comErr != nil {
+		fmt.Println("Error in transaction")
+		return utils.NewHttpError("Server error", http.StatusInternalServerError)
+	}
+
+	return nil
 }

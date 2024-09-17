@@ -37,7 +37,14 @@ func LoginController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.LoginUser(payload, w)
+	tokens, err1 := service.LoginUser(payload)
+
+	if err1 != nil {
+		utils.SendMsg(err1.(*utils.HttpError).Message, err1.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{Msg: "Tokens generated", Data: tokens}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -97,5 +104,12 @@ func RenewAccessToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.RenewAccessToken(token, w)
+	newTokens, err1 := service.RenewAccessToken(token)
+
+	if err1 != nil {
+		utils.SendMsg(err1.(*utils.HttpError).Message, err1.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{Msg: "Tokens generated", Data: newTokens}, http.StatusCreated, w)
 }
