@@ -49,11 +49,18 @@ func PlaceOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.PlaceOrder(service.OrdersPayload{
+	res, err1 := service.PlaceOrder(service.OrdersPayload{
 		Products:      payload.Products,
 		AddressUsed:   payload.AddressUsed,
 		PaymentMethod: payload.PaymentMethod,
-	}, userId.(string), w)
+	}, userId.(string))
+
+	if err1 != nil {
+		utils.SendMsg(err1.(*utils.HttpError).Message, err1.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendMsg(res, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -77,5 +84,15 @@ func GetOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.GetOrders(userId.(string), w)
+	res, err := service.GetOrders(userId.(string))
+
+	if err != nil {
+		utils.SendMsg(err.(*utils.HttpError).Message, err.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Orders data",
+		Data: res,
+	}, http.StatusOK, w)
 }

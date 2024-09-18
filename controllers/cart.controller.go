@@ -61,13 +61,19 @@ func AddToCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.AddToCart(service.AddToCartPayload{
+	str, err2 := service.AddToCart(service.AddToCartPayload{
 		Quantity: payload.Quantity,
 	},
 		userId.(string),
 		productId,
-		w,
 	)
+
+	if err2 != nil {
+		utils.SendMsg(err2.(*utils.HttpError).Message, err2.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendMsg(str, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -102,7 +108,14 @@ func RemoveFromCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.RemoveFromCart(userId.(string), id, w)
+	str, err1 := service.RemoveFromCart(userId.(string), id)
+
+	if err1 != nil {
+		utils.SendMsg(err1.(*utils.HttpError).Message, err1.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendMsg(str, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -149,13 +162,19 @@ func UpdateCartItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.UpdateCartItems(service.AddToCartPayload{
+	str, err2 := service.UpdateCartItems(service.AddToCartPayload{
 		Quantity: payload.Quantity,
 	},
 		userId.(string),
 		id,
-		w,
 	)
+
+	if err2 != nil {
+		utils.SendMsg(err2.(*utils.HttpError).Message, err2.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendMsg(str, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -179,7 +198,15 @@ func GetCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.GetCart(userId.(string), w)
-}
+	res, err := service.GetCart(userId.(string))
 
-// update the controllers to send data
+	if err != nil {
+		utils.SendMsg(err.(*utils.HttpError).Message, err.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Cart data",
+		Data: res,
+	}, http.StatusOK, w)
+}

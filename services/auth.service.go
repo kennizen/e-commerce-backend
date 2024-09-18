@@ -32,7 +32,7 @@ type RenewAccessTokenPayload struct {
 	RefToken string `validate:"required"`
 }
 
-func RegisterUser(arg RegisterUserPayload, w http.ResponseWriter) {
+func RegisterUser(arg RegisterUserPayload) (string, error) {
 	var hashed_password string
 
 	h := sha256.New()
@@ -45,15 +45,13 @@ func RegisterUser(arg RegisterUserPayload, w http.ResponseWriter) {
 
 	if err != nil {
 		fmt.Println("Failed to query customers", err.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	defer rows.Close()
 
 	if rows.Next() {
-		utils.SendMsg("User already exists", http.StatusConflict, w)
-		return
+		return "", utils.NewHttpError("User already exists", http.StatusConflict)
 	}
 
 	// if not user already present insert the user
@@ -61,8 +59,7 @@ func RegisterUser(arg RegisterUserPayload, w http.ResponseWriter) {
 
 	if err != nil {
 		fmt.Println("Failed to start a trx", err.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	_, err1 := trx.Exec(
@@ -72,19 +69,17 @@ func RegisterUser(arg RegisterUserPayload, w http.ResponseWriter) {
 	if err1 != nil {
 		fmt.Println("Failed to insert in customers", err1.Error())
 		trx.Rollback()
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	comErr := trx.Commit()
 
 	if comErr != nil {
 		fmt.Println("Failed to commit", comErr.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
-	utils.SendMsg("User created", http.StatusCreated, w)
+	return "User created", nil
 }
 
 // ---------------------------------------------------------------------------------------- //

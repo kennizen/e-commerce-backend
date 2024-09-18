@@ -45,7 +45,17 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 		log.Fatalln("Error converting query params")
 	}
 
-	service.GetProducts(page1, limit1, w)
+	res, err2 := service.GetProducts(page1, limit1)
+
+	if err2 != nil {
+		utils.SendMsg(err2.(*utils.HttpError).Message, err2.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Products",
+		Data: res,
+	}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -71,7 +81,17 @@ func GetProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.GetProduct(productId, w)
+	res, err1 := service.GetProduct(productId)
+
+	if err1 != nil {
+		utils.SendMsg(err1.(*utils.HttpError).Message, err1.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Product",
+		Data: res,
+	}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -106,7 +126,14 @@ func MarkFavorite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.MarkFavorite(userId.(string), id, w)
+	res, err1 := service.MarkFavorite(userId.(string), id)
+
+	if err1 != nil {
+		utils.SendMsg(err1.(*utils.HttpError).Message, err1.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendMsg(res, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -134,7 +161,14 @@ func UnMarkFavorite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.UnMarkFavorite(userId.(string), id, w)
+	res, err1 := service.UnMarkFavorite(userId.(string), id)
+
+	if err1 != nil {
+		utils.SendMsg(err1.(*utils.HttpError).Message, err1.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendMsg(res, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -157,7 +191,17 @@ func GetFavorites(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.GetFavorites(userId.(string), w)
+	res, err := service.GetFavorites(userId.(string))
+
+	if err != nil {
+		utils.SendMsg(err.(*utils.HttpError).Message, err.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Favorites",
+		Data: res,
+	}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -212,10 +256,20 @@ func AddProductReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.AddProductReview(service.ProductReviewPayload{
+	res, err1 := service.AddProductReview(service.ProductReviewPayload{
 		Review: payload.Review,
 		Rating: payload.Rating,
-	}, productId, userId.(string), w)
+	}, productId, userId.(string))
+
+	if err1 != nil {
+		utils.SendMsg(err1.(*utils.HttpError).Message, err1.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Product review added",
+		Data: res,
+	}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //

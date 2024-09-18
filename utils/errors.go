@@ -15,5 +15,5 @@ func NewHttpError(msg string, code int) *HttpError {
 }
 
 func (err *HttpError) Error() string {
-	return fmt.Sprintf("%v with http status code %v", err.Message, err.Status)
+	return fmt.Sprintf("Error %v with http status %v", err.Message, err.Status)
 }

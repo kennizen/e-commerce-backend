@@ -45,12 +45,12 @@ func getOrderValues(products *[]Product, userId string, paymentId string, addres
 	return strings.TrimSuffix(parentStr, ",")
 }
 
-func PlaceOrder(args OrdersPayload, userId string, w http.ResponseWriter) {
+func PlaceOrder(args OrdersPayload, userId string) (string, error) {
 	var amount float32
 
 	row := db.DB.QueryRow(`
-	WITH user_input AS (SELECT * FROM (values ` + getIds(&args.Products) + `)` + ` AS t(product_id, quantity)) 
-	SELECT SUM(p.price * ui.quantity) FROM user_input ui LEFT JOIN products p ON ui.product_id = p.id`,
+		WITH user_input AS (SELECT * FROM (values ` + getIds(&args.Products) + `)` + ` AS t(product_id, quantity)) 
+		SELECT SUM(p.price * ui.quantity) FROM user_input ui LEFT JOIN products p ON ui.product_id = p.id`,
 	)
 
 	row.Scan(&amount)
@@ -59,8 +59,7 @@ func PlaceOrder(args OrdersPayload, userId string, w http.ResponseWriter) {
 
 	if trxErr != nil {
 		fmt.Println("Error in transaction", trxErr.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	row1 := trx.QueryRow(
@@ -79,19 +78,17 @@ func PlaceOrder(args OrdersPayload, userId string, w http.ResponseWriter) {
 	if err1 != nil {
 		trx.Rollback()
 		fmt.Println("Error inserting data in orders", err1.Error())
-		utils.SendMsg("Bad request", http.StatusBadRequest, w)
-		return
+		return "", utils.NewHttpError("Bad request", http.StatusBadRequest)
 	}
 
 	comErr := trx.Commit()
 
 	if comErr != nil {
 		fmt.Println("Error in transaction")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
-	utils.SendMsg("Order placed", http.StatusOK, w)
+	return "Order placed", nil
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -125,7 +122,7 @@ type AllOrdersResponse struct {
 	Address AddressRes
 }
 
-func GetOrders(userId string, w http.ResponseWriter) {
+func GetOrders(userId string) (*[]AllOrdersResponse, error) {
 	rows, err := db.DB.Query(`
 		select
 		o.id as order_id,
@@ -156,18 +153,15 @@ func GetOrders(userId string, w http.ResponseWriter) {
 
 	if err != nil {
 		fmt.Println("Error in querying orders", err.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	defer rows.Close()
 
 	var data AllOrdersResponse
-	var resp []AllOrdersResponse
-	isEmpty := true
+	var resp []AllOrdersResponse = make([]AllOrdersResponse, 0)
 
 	for rows.Next() {
-		isEmpty = false
 		err := rows.Scan(
 			&data.Order.OrderId,
 			&data.Order.Quantity,
@@ -196,10 +190,5 @@ func GetOrders(userId string, w http.ResponseWriter) {
 		resp = append(resp, data)
 	}
 
-	if isEmpty {
-		utils.SendJson(utils.ResUserWithData{Msg: "Orders data", Data: make([]any, 0)}, http.StatusOK, w)
-		return
-	}
-
-	utils.SendJson(utils.ResUserWithData{Msg: "Orders data", Data: resp}, http.StatusOK, w)
+	return &resp, nil
 }

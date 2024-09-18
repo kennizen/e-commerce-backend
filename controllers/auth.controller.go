@@ -78,7 +78,14 @@ func RegisterController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.RegisterUser(payload, w)
+	str, err1 := service.RegisterUser(payload)
+
+	if err1 != nil {
+		utils.SendMsg(err1.(*utils.HttpError).Message, err1.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendMsg(str, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //

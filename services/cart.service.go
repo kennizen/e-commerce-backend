@@ -15,7 +15,7 @@ type AddToCartPayload struct {
 	Quantity int `validate:"required,gte="`
 }
 
-func AddToCart(args AddToCartPayload, userId, productId string, w http.ResponseWriter) {
+func AddToCart(args AddToCartPayload, userId, productId string) (string, error) {
 	var id string = ""
 
 	row := db.DB.QueryRow("SELECT id FROM cart WHERE customer_id = $1 AND product_id = $2", userId, productId)
@@ -23,16 +23,14 @@ func AddToCart(args AddToCartPayload, userId, productId string, w http.ResponseW
 
 	if id != "" {
 		fmt.Println("Product already added to cart")
-		utils.SendMsg("Product already in cart", http.StatusBadRequest, w)
-		return
+		return "", utils.NewHttpError("Product already in cart", http.StatusBadRequest)
 	}
 
 	trx, trxErr := db.DB.Begin()
 
 	if trxErr != nil {
 		fmt.Println("Error in transaction", trxErr.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	_, err := trx.Exec(
@@ -42,24 +40,22 @@ func AddToCart(args AddToCartPayload, userId, productId string, w http.ResponseW
 
 	if err != nil {
 		fmt.Println("Failed to add product to cart.")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	comErr := trx.Commit()
 
 	if comErr != nil {
 		fmt.Println("Error in transaction")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
-	utils.SendMsg("Product added to cart", http.StatusOK, w)
+	return "Product added to cart", nil
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func RemoveFromCart(userId, productId string, w http.ResponseWriter) {
+func RemoveFromCart(userId, productId string) (string, error) {
 	var id string = ""
 
 	row := db.DB.QueryRow("SELECT id FROM cart WHERE customer_id = $1 AND product_id = $2", userId, productId)
@@ -67,40 +63,36 @@ func RemoveFromCart(userId, productId string, w http.ResponseWriter) {
 
 	if id == "" {
 		fmt.Println("Product not found to remove")
-		utils.SendMsg("Product not found to remove", http.StatusBadRequest, w)
-		return
+		return "", utils.NewHttpError("Product not found to remove", http.StatusBadRequest)
 	}
 
 	trx, trxErr := db.DB.Begin()
 
 	if trxErr != nil {
 		fmt.Println("Error in transaction", trxErr.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	_, err := trx.Exec("DELETE FROM cart WHERE id = $1", id)
 
 	if err != nil {
 		fmt.Println("Failed to remove product from cart.")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	comErr := trx.Commit()
 
 	if comErr != nil {
 		fmt.Println("Error in transaction")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
-	utils.SendMsg("Product removed from cart", http.StatusOK, w)
+	return "Product removed from cart", nil
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func UpdateCartItems(args AddToCartPayload, userId, productId string, w http.ResponseWriter) {
+func UpdateCartItems(args AddToCartPayload, userId, productId string) (string, error) {
 	var id string
 
 	row := db.DB.QueryRow(
@@ -110,16 +102,14 @@ func UpdateCartItems(args AddToCartPayload, userId, productId string, w http.Res
 
 	if id == "" {
 		fmt.Println("Product not found to update")
-		utils.SendMsg("Product not found to update", http.StatusBadRequest, w)
-		return
+		return "", utils.NewHttpError("Product not found to update", http.StatusBadRequest)
 	}
 
 	trx, trxErr := db.DB.Begin()
 
 	if trxErr != nil {
 		fmt.Println("Error in transaction", trxErr.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	_, err := trx.Exec(
@@ -129,19 +119,17 @@ func UpdateCartItems(args AddToCartPayload, userId, productId string, w http.Res
 
 	if err != nil {
 		fmt.Println("Failed to update cart.")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	comErr := trx.Commit()
 
 	if comErr != nil {
 		fmt.Println("Error in transaction")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
-	utils.SendMsg("Cart updated", http.StatusOK, w)
+	return "Cart updated", nil
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -151,7 +139,7 @@ type GetCartResponse struct {
 	Quantity int
 }
 
-func GetCart(userId string, w http.ResponseWriter) {
+func GetCart(userId string) (*[]GetCartResponse, error) {
 	rows, err := db.DB.Query(
 		`select 
 				p.id, 
@@ -180,16 +168,13 @@ func GetCart(userId string, w http.ResponseWriter) {
 
 	if err != nil {
 		fmt.Println("Failed to get cart")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	var res []GetCartResponse = make([]GetCartResponse, 0)
 	var product GetCartResponse
-	isEmpty := true
 
 	for rows.Next() {
-		isEmpty = false
 		err := rows.Scan(
 			&product.Id,
 			&product.Title,
@@ -218,10 +203,5 @@ func GetCart(userId string, w http.ResponseWriter) {
 		res = append(res, product)
 	}
 
-	if isEmpty {
-		utils.SendJson(utils.ResUserWithData{Msg: "Cart empty", Data: make([]any, 0)}, http.StatusOK, w)
-		return
-	}
-
-	utils.SendJson(utils.ResUserWithData{Msg: "Cart data", Data: res}, http.StatusOK, w)
+	return &res, nil
 }

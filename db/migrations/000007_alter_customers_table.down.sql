@@ -1,2 +1,2 @@
 alter table if exists customers
-drop column refToken_id;
+drop column reftoken_id;

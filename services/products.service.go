@@ -24,7 +24,7 @@ type ProductsResponse struct {
 
 // ---------------------------------------------------------------------------------------- //
 
-func GetProducts(page, limit int, w http.ResponseWriter) {
+func GetProducts(page, limit int) (*ProductsResponse, error) {
 	var rows *sql.Rows
 	var err error
 
@@ -38,20 +38,17 @@ func GetProducts(page, limit int, w http.ResponseWriter) {
 
 	if err != nil {
 		fmt.Println("Failed to query customers", err.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	defer rows.Close()
 
-	var count int
+	var count int = 0
 	rowCount.Scan(&count)
 	product := models.Product{}
 	products := make([]models.Product, 0)
-	isEmpty := true
 
 	for rows.Next() {
-		isEmpty = false
 		err := rows.Scan(
 			&product.Id,
 			&product.Title,
@@ -81,31 +78,19 @@ func GetProducts(page, limit int, w http.ResponseWriter) {
 		products = append(products, product)
 	}
 
-	if isEmpty {
-		utils.SendJson(utils.ResUserWithData{
-			Msg:  "No products found",
-			Data: make([]any, 0),
-		}, http.StatusOK, w)
-		return
-	}
-
-	utils.SendJson(utils.ResUserWithData{
-		Msg: "Products",
-		Data: ProductsResponse{
-			Products:   &products,
-			TotalCount: count,
-		},
-	}, http.StatusOK, w)
+	return &ProductsResponse{
+		Products:   &products,
+		TotalCount: count,
+	}, nil
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func GetProduct(id int, w http.ResponseWriter) {
+func GetProduct(id int) (*models.Product, error) {
 	row := db.DB.QueryRow("SELECT * FROM products WHERE id = $1", id)
 
 	if row == nil {
-		utils.SendMsg("Product not found", http.StatusNotFound, w)
-		return
+		return nil, utils.NewHttpError("Product not found", http.StatusNotFound)
 	}
 
 	product := models.Product{}
@@ -136,54 +121,47 @@ func GetProduct(id int, w http.ResponseWriter) {
 		log.Fatalln("Error scanning row", err.Error())
 	}
 
-	utils.SendJson(utils.ResUserWithData{
-		Msg:  "Product found",
-		Data: product,
-	}, http.StatusOK, w)
+	return &product, nil
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func MarkFavorite(userId, productId string, w http.ResponseWriter) {
+func MarkFavorite(userId, productId string) (string, error) {
 	rows, err := db.DB.Query("SELECT id FROM favorites WHERE customer_id = $1 AND product_id = $2", userId, productId)
 
 	if rows.Next() {
-		utils.SendMsg("Product already added to favorites", http.StatusConflict, w)
-		return
+		return "", utils.NewHttpError("Product already added to favorites", http.StatusConflict)
 	}
 
 	trx, trxErr := db.DB.Begin()
 
 	if trxErr != nil {
 		fmt.Println("Error in transaction", trxErr.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	_, err1 := trx.Exec("INSERT INTO favorites (customer_id, product_id) VALUES ($1, $2)", userId, productId)
 
 	if err1 != nil || err != nil {
 		fmt.Println("Error inserting data in favorite", err1.Error(), err.Error())
-		utils.SendMsg("Bad request", http.StatusBadRequest, w)
-		return
+		return "", utils.NewHttpError("Bad request", http.StatusBadRequest)
 	}
 
 	comErr := trx.Commit()
 
 	if comErr != nil {
 		fmt.Println("Error in transaction")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	rows.Close()
 
-	utils.SendMsg("Product added to favorites", http.StatusOK, w)
+	return "Product added to favorites", nil
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func UnMarkFavorite(userId, productId string, w http.ResponseWriter) {
+func UnMarkFavorite(userId, productId string) (string, error) {
 	var favId string = ""
 
 	row := db.DB.QueryRow("SELECT id FROM favorites WHERE customer_id = $1 AND product_id = $2", userId, productId)
@@ -191,40 +169,36 @@ func UnMarkFavorite(userId, productId string, w http.ResponseWriter) {
 
 	if favId == "" {
 		fmt.Println("Product not found to unmark favorite.")
-		utils.SendMsg("Bad request", http.StatusBadRequest, w)
-		return
+		return "", utils.NewHttpError("Bad request", http.StatusBadRequest)
 	}
 
 	trx, trxErr := db.DB.Begin()
 
 	if trxErr != nil {
 		fmt.Println("Error in transaction", trxErr.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	_, err := trx.Exec("DELETE FROM favorites WHERE id = $1", favId)
 
 	if err != nil {
 		fmt.Println("Failed to unmark favorite product.")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	comErr := trx.Commit()
 
 	if comErr != nil {
 		fmt.Println("Error in transaction")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return "", utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
-	utils.SendMsg("Product removed from favorites", http.StatusOK, w)
+	return "Product removed from favorites", nil
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func GetFavorites(userId string, w http.ResponseWriter) {
+func GetFavorites(userId string) (*[]models.Product, error) {
 	rows, err := db.DB.Query(
 		`select 
 				p.id, 
@@ -252,8 +226,7 @@ func GetFavorites(userId string, w http.ResponseWriter) {
 
 	if err != nil {
 		fmt.Println("Failed to get favorites")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	var products []models.Product = make([]models.Product, 0)
@@ -287,15 +260,12 @@ func GetFavorites(userId string, w http.ResponseWriter) {
 		products = append(products, product)
 	}
 
-	utils.SendJson(utils.ResUserWithData{
-		Msg:  "Favorites found",
-		Data: products,
-	}, http.StatusOK, w)
+	return &products, nil
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func AddProductReview(args ProductReviewPayload, userId, productId string, w http.ResponseWriter) {
+func AddProductReview(args ProductReviewPayload, userId, productId string) (*models.ProductReview, error) {
 	var id string = ""
 
 	row := db.DB.QueryRow(
@@ -305,16 +275,14 @@ func AddProductReview(args ProductReviewPayload, userId, productId string, w htt
 
 	if id != "" {
 		fmt.Println("Review already added by user", userId)
-		utils.SendMsg("Already reviewed the product", http.StatusBadRequest, w)
-		return
+		return nil, utils.NewHttpError("Already reviewed the product", http.StatusBadRequest)
 	}
 
 	trx, trxErr := db.DB.Begin()
 
 	if trxErr != nil {
 		fmt.Println("Error in transaction", trxErr.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	row1 := trx.QueryRow(
@@ -338,14 +306,10 @@ func AddProductReview(args ProductReviewPayload, userId, productId string, w htt
 
 	if comErr != nil {
 		fmt.Println("Error in transaction")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
-	utils.SendJson(utils.ResUserWithData{
-		Msg:  "Product review added",
-		Data: proReview,
-	}, http.StatusOK, w)
+	return &proReview, nil
 }
 
 // ---------------------------------------------------------------------------------------- //

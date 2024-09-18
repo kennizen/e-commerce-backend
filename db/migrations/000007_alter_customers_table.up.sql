@@ -1,2 +1,2 @@
 alter table if exists customers
-add column refToken_id varchar;
+add column reftoken_id varchar;
