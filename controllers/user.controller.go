@@ -50,14 +50,24 @@ func UpdateUserDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.UpdateUserDetails(service.UserDetailsPayload{
+	res, err1 := service.UpdateUserDetails(service.UserDetailsPayload{
 		Firstname:  payload.Firstname,
 		Middlename: payload.Middlename,
 		Lastname:   payload.Lastname,
 		Age:        payload.Age,
 		Email:      payload.Email,
 		Avatar:     payload.Avatar,
-	}, userId.(string), w)
+	}, userId.(string))
+
+	if err1 != nil {
+		utils.SendMsg(err1.(*utils.HttpError).Message, err1.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "User updated",
+		Data: res,
+	}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -81,7 +91,17 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.DeleteUser(userId.(string), w)
+	res, err := service.DeleteUser(userId.(string))
+
+	if err != nil {
+		utils.SendMsg(err.(*utils.HttpError).Message, err.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "User deleted",
+		Data: res,
+	}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -125,13 +145,23 @@ func AddAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.AddAddress(service.UserAddressPayload{
+	res, err1 := service.AddAddress(service.UserAddressPayload{
 		Country: payload.Country,
 		State:   payload.State,
 		Zipcode: payload.Zipcode,
 		PhoneNo: payload.PhoneNo,
 		Address: payload.Address,
-	}, userId.(string), w)
+	}, userId.(string))
+
+	if err1 != nil {
+		utils.SendMsg(err1.(*utils.HttpError).Message, err1.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Address added",
+		Data: res,
+	}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -178,13 +208,23 @@ func UpdateAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.UpdateAddress(service.UserAddressPayload{
+	res, err1 := service.UpdateAddress(service.UserAddressPayload{
 		Country: payload.Country,
 		State:   payload.State,
 		Zipcode: payload.Zipcode,
 		PhoneNo: payload.PhoneNo,
 		Address: payload.Address,
-	}, id, w)
+	}, id)
+
+	if err1 != nil {
+		utils.SendMsg(err1.(*utils.HttpError).Message, err1.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Address updated",
+		Data: res,
+	}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -219,7 +259,18 @@ func DeleteAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.DeleteAddress(id, userId.(string), w)
+	res, err := service.DeleteAddress(id, userId.(string))
+
+	if err != nil {
+		utils.SendMsg(err.(*utils.HttpError).Message, err.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Address deleted",
+		Data: res,
+	}, http.StatusOK, w)
+
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -243,5 +294,15 @@ func GetAddresses(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.GetAddresses(userId.(string), w)
+	res, err := service.GetAddresses(userId.(string))
+
+	if err != nil {
+		utils.SendMsg(err.(*utils.HttpError).Message, err.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Addresses",
+		Data: res,
+	}, http.StatusOK, w)
 }

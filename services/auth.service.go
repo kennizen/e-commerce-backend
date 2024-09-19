@@ -28,10 +28,6 @@ type LoginUserPayload struct {
 	Password string `validate:"required"`
 }
 
-type RenewAccessTokenPayload struct {
-	RefToken string `validate:"required"`
-}
-
 func RegisterUser(arg RegisterUserPayload) (string, error) {
 	var hashed_password string
 
@@ -139,8 +135,8 @@ func LoginUser(payload LoginUserPayload) (*lib.Tokens, error) {
 
 // ---------------------------------------------------------------------------------------- //
 
-func RenewAccessToken(refToken RenewAccessTokenPayload) (*lib.Tokens, error) {
-	claims, isValid := lib.ValidateToken(refToken.RefToken, os.Getenv("JWT_REFRESH_TOKEN_SECRET"))
+func RenewAccessToken(refToken string) (*lib.Tokens, error) {
+	claims, isValid := lib.ValidateToken(refToken, os.Getenv("JWT_REFRESH_TOKEN_SECRET"))
 
 	if !isValid {
 		return &lib.Tokens{}, utils.NewHttpError("Invalid token", http.StatusUnauthorized)

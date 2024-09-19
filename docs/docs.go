@@ -454,7 +454,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/lib.Tokens"
+                                            "$ref": "#/definitions/controller.AccessToken"
                                         }
                                     }
                                 }
@@ -814,10 +814,7 @@ const docTemplate = `{
         },
         "/renew-access-token": {
             "get": {
-                "description": "API for renewing the access token. Make sure to provide the refresh token to get the new tokens",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "API for renewing the access token. The refresh token is set in the http-only cookie when the user first logs in so renewing the token will only work if the user have logged in atleast once.",
                 "produces": [
                     "application/json"
                 ],
@@ -825,17 +822,6 @@ const docTemplate = `{
                     "Auth"
                 ],
                 "summary": "Renew Access Token",
-                "parameters": [
-                    {
-                        "description": "Renew access token payload",
-                        "name": "token",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/service.RenewAccessTokenPayload"
-                        }
-                    }
-                ],
                 "responses": {
                     "201": {
                         "description": "Created",
@@ -848,7 +834,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/lib.Tokens"
+                                            "$ref": "#/definitions/controller.AccessToken"
                                         }
                                     }
                                 }
@@ -1498,20 +1484,14 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "lib.Tokens": {
+        "controller.AccessToken": {
             "type": "object",
             "properties": {
-                "refreshToken": {
-                    "type": "string"
-                },
-                "refreshTokenExp": {
+                "expiry": {
                     "type": "integer"
                 },
                 "token": {
                     "type": "string"
-                },
-                "tokenExp": {
-                    "type": "integer"
                 }
             }
         },
@@ -1982,17 +1962,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "service.RenewAccessTokenPayload": {
-            "type": "object",
-            "required": [
-                "refToken"
-            ],
-            "properties": {
-                "refToken": {
                     "type": "string"
                 }
             }

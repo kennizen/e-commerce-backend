@@ -28,7 +28,7 @@ type UserAddressPayload struct {
 	Address string `validate:"required"`
 }
 
-func UpdateUserDetails(args UserDetailsPayload, userId string, w http.ResponseWriter) {
+func UpdateUserDetails(args UserDetailsPayload, userId string) (*models.User, error) {
 	var id string = ""
 
 	row := db.DB.QueryRow("SELECT id FROM customers WHERE id = $1", userId)
@@ -36,16 +36,14 @@ func UpdateUserDetails(args UserDetailsPayload, userId string, w http.ResponseWr
 
 	if id == "" {
 		fmt.Println("User not found to update")
-		utils.SendMsg("User not found to update", http.StatusBadRequest, w)
-		return
+		return nil, utils.NewHttpError("User not found to update", http.StatusBadRequest)
 	}
 
 	trx, trxErr := db.DB.Begin()
 
 	if trxErr != nil {
 		fmt.Println("Error in transaction", trxErr.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	trxRow := trx.QueryRow(
@@ -71,19 +69,15 @@ func UpdateUserDetails(args UserDetailsPayload, userId string, w http.ResponseWr
 
 	if comErr != nil {
 		fmt.Println("Error in transaction")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
-	utils.SendJson(utils.ResUserWithData{
-		Msg:  "User updated",
-		Data: user,
-	}, http.StatusOK, w)
+	return &user, nil
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func DeleteUser(userId string, w http.ResponseWriter) {
+func DeleteUser(userId string) (*models.User, error) {
 	var id string = ""
 
 	row := db.DB.QueryRow("SELECT id FROM customers WHERE id = $1", userId)
@@ -91,16 +85,14 @@ func DeleteUser(userId string, w http.ResponseWriter) {
 
 	if id == "" {
 		fmt.Println("User not found to delete")
-		utils.SendMsg("User not found to delete", http.StatusBadRequest, w)
-		return
+		return nil, utils.NewHttpError("User not found to delete", http.StatusBadRequest)
 	}
 
 	trx, trxErr := db.DB.Begin()
 
 	if trxErr != nil {
 		fmt.Println("Error in transaction", trxErr.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	trxRow := trx.QueryRow("DELETE FROM customers WHERE id = $1 RETURNING *", userId)
@@ -124,25 +116,20 @@ func DeleteUser(userId string, w http.ResponseWriter) {
 
 	if comErr != nil {
 		fmt.Println("Error in transaction")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
-	utils.SendJson(utils.ResUserWithData{
-		Msg:  "User deleted",
-		Data: user,
-	}, http.StatusOK, w)
+	return &user, nil
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func AddAddress(args UserAddressPayload, userId string, w http.ResponseWriter) {
+func AddAddress(args UserAddressPayload, userId string) (*models.Address, error) {
 	trx, trxErr := db.DB.Begin()
 
 	if trxErr != nil {
 		fmt.Println("Error in transaction", trxErr.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	row := trx.QueryRow(
@@ -168,19 +155,15 @@ func AddAddress(args UserAddressPayload, userId string, w http.ResponseWriter) {
 
 	if comErr != nil {
 		fmt.Println("Error in transaction")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
-	utils.SendJson(utils.ResUserWithData{
-		Msg:  "Address added",
-		Data: address,
-	}, http.StatusOK, w)
+	return &address, nil
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func UpdateAddress(args UserAddressPayload, addressId string, w http.ResponseWriter) {
+func UpdateAddress(args UserAddressPayload, addressId string) (*models.Address, error) {
 	var id string = ""
 
 	row := db.DB.QueryRow("SELECT id FROM addresses WHERE id = $1", addressId)
@@ -188,16 +171,14 @@ func UpdateAddress(args UserAddressPayload, addressId string, w http.ResponseWri
 
 	if id == "" {
 		fmt.Println("Address not found to update")
-		utils.SendMsg("Address not found to update", http.StatusBadRequest, w)
-		return
+		return nil, utils.NewHttpError("Address not found to update", http.StatusBadRequest)
 	}
 
 	trx, trxErr := db.DB.Begin()
 
 	if trxErr != nil {
 		fmt.Println("Error in transaction", trxErr.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	addr := trx.QueryRow(
@@ -225,19 +206,15 @@ func UpdateAddress(args UserAddressPayload, addressId string, w http.ResponseWri
 
 	if comErr != nil {
 		fmt.Println("Error in transaction")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
-	utils.SendJson(utils.ResUserWithData{
-		Msg:  "Address updated",
-		Data: address,
-	}, http.StatusOK, w)
+	return &address, nil
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func DeleteAddress(addressId string, userId string, w http.ResponseWriter) {
+func DeleteAddress(addressId string, userId string) (*models.Address, error) {
 	var id string = ""
 
 	row := db.DB.QueryRow("SELECT id FROM addresses WHERE id = $1", addressId)
@@ -245,16 +222,14 @@ func DeleteAddress(addressId string, userId string, w http.ResponseWriter) {
 
 	if id == "" {
 		fmt.Println("Address not found to delete")
-		utils.SendMsg("Address not found to delete", http.StatusBadRequest, w)
-		return
+		return nil, utils.NewHttpError("Address not found to delete", http.StatusBadRequest)
 	}
 
 	trx, trxErr := db.DB.Begin()
 
 	if trxErr != nil {
 		fmt.Println("Error in transaction", trxErr.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	addr := trx.QueryRow(`DELETE FROM addresses WHERE id = $1 AND address_of = $2 RETURNING *`, addressId, userId)
@@ -277,35 +252,28 @@ func DeleteAddress(addressId string, userId string, w http.ResponseWriter) {
 
 	if comErr != nil {
 		fmt.Println("Error in transaction")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
-	utils.SendJson(utils.ResUserWithData{
-		Msg:  "Address deleted",
-		Data: address,
-	}, http.StatusOK, w)
+	return &address, nil
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func GetAddresses(userId string, w http.ResponseWriter) {
+func GetAddresses(userId string) (*[]models.Address, error) {
 	rows, err := db.DB.Query("SELECT * FROM addresses WHERE address_of = $1", userId)
 
 	if err != nil {
 		fmt.Println("Failed to query addresses", err.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	defer rows.Close()
 
 	var address models.Address
-	var addresses []models.Address
-	isEmpty := true
+	var addresses []models.Address = make([]models.Address, 0)
 
 	for rows.Next() {
-		isEmpty = false
 		err := rows.Scan(
 			&address.Id,
 			&address.Country,
@@ -325,16 +293,5 @@ func GetAddresses(userId string, w http.ResponseWriter) {
 		addresses = append(addresses, address)
 	}
 
-	if isEmpty {
-		utils.SendJson(utils.ResUserWithData{
-			Msg:  "No addresses found",
-			Data: make([]any, 0),
-		}, http.StatusOK, w)
-		return
-	}
-
-	utils.SendJson(utils.ResUserWithData{
-		Msg:  "Addresses",
-		Data: addresses,
-	}, http.StatusOK, w)
+	return &addresses, nil
 }

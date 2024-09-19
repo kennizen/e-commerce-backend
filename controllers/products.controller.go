@@ -324,10 +324,20 @@ func UpdateProductReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.UpdateProductReview(service.ProductReviewPayload{
+	res, err1 := service.UpdateProductReview(service.ProductReviewPayload{
 		Review: payload.Review,
 		Rating: payload.Rating,
-	}, reviewId, userId.(string), w)
+	}, reviewId, userId.(string))
+
+	if err1 != nil {
+		utils.SendMsg(err1.(*utils.HttpError).Message, err1.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Product review updated",
+		Data: res,
+	}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -363,7 +373,17 @@ func DeleteProductReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.DeleteProductReview(reviewId, userId.(string), w)
+	res, err := service.DeleteProductReview(reviewId, userId.(string))
+
+	if err != nil {
+		utils.SendMsg(err.(*utils.HttpError).Message, err.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Product review deleted",
+		Data: res,
+	}, http.StatusOK, w)
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -388,5 +408,15 @@ func GetProductReviewsByProductId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service.GetProductReviewsByProductId(productId, w)
+	res, err := service.GetProductReviewsByProductId(productId)
+
+	if err != nil {
+		utils.SendMsg(err.(*utils.HttpError).Message, err.(*utils.HttpError).Status, w)
+		return
+	}
+
+	utils.SendJson(utils.ResUserWithData{
+		Msg:  "Reviews",
+		Data: res,
+	}, http.StatusOK, w)
 }

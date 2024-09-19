@@ -314,7 +314,7 @@ func AddProductReview(args ProductReviewPayload, userId, productId string) (*mod
 
 // ---------------------------------------------------------------------------------------- //
 
-func UpdateProductReview(args ProductReviewPayload, userId, reviewId string, w http.ResponseWriter) {
+func UpdateProductReview(args ProductReviewPayload, userId, reviewId string) (*models.ProductReview, error) {
 	var id string = ""
 
 	row := db.DB.QueryRow("SELECT id FROM product_reviews WHERE id = $1", reviewId)
@@ -322,16 +322,14 @@ func UpdateProductReview(args ProductReviewPayload, userId, reviewId string, w h
 
 	if id == "" {
 		fmt.Println("Review not found to update", reviewId)
-		utils.SendMsg("Review not found to update", http.StatusBadRequest, w)
-		return
+		return nil, utils.NewHttpError("Review not found to update", http.StatusBadRequest)
 	}
 
 	trx, trxErr := db.DB.Begin()
 
 	if trxErr != nil {
 		fmt.Println("Error in transaction", trxErr.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
 	row1 := trx.QueryRow(
@@ -355,19 +353,15 @@ func UpdateProductReview(args ProductReviewPayload, userId, reviewId string, w h
 
 	if comErr != nil {
 		fmt.Println("Error in transaction")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server error", http.StatusInternalServerError)
 	}
 
-	utils.SendJson(utils.ResUserWithData{
-		Msg:  "Product review updated",
-		Data: proReview,
-	}, http.StatusOK, w)
+	return &proReview, nil
 }
 
 // ---------------------------------------------------------------------------------------- //
 
-func DeleteProductReview(reviewId, userId string, w http.ResponseWriter) {
+func DeleteProductReview(reviewId, userId string) (*models.ProductReview, error) {
 	var id string = ""
 
 	row := db.DB.QueryRow("SELECT id FROM product_reviews WHERE id = $1 AND review_by = $2", reviewId, userId)
@@ -375,16 +369,14 @@ func DeleteProductReview(reviewId, userId string, w http.ResponseWriter) {
 
 	if id == "" {
 		fmt.Println("Review not found to delete", reviewId)
-		utils.SendMsg("Review not found to delete", http.StatusBadRequest, w)
-		return
+		return nil, utils.NewHttpError("Review not found to delete", http.StatusBadRequest)
 	}
 
 	trx, trxErr := db.DB.Begin()
 
 	if trxErr != nil {
 		fmt.Println("Error in transaction", trxErr.Error())
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server", http.StatusInternalServerError)
 	}
 
 	delRow := trx.QueryRow("DELETE FROM product_reviews WHERE id = $1 AND review_by = $2 RETURNING *", reviewId, userId)
@@ -405,14 +397,10 @@ func DeleteProductReview(reviewId, userId string, w http.ResponseWriter) {
 
 	if comErr != nil {
 		fmt.Println("Error in transaction")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server", http.StatusInternalServerError)
 	}
 
-	utils.SendJson(utils.ResUserWithData{
-		Msg:  "Product review deleted",
-		Data: proReview,
-	}, http.StatusOK, w)
+	return &proReview, nil
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -440,7 +428,7 @@ type AllReviewsResponse struct {
 	Customer Customer
 }
 
-func GetProductReviewsByProductId(productId string, w http.ResponseWriter) {
+func GetProductReviewsByProductId(productId string) (*[]AllReviewsResponse, error) {
 	rows, err := db.DB.Query(
 		`select 
 			pr.id, 
@@ -463,15 +451,12 @@ func GetProductReviewsByProductId(productId string, w http.ResponseWriter) {
 
 	if err != nil {
 		fmt.Println("Failed to execute query")
-		utils.SendMsg("Server error", http.StatusInternalServerError, w)
-		return
+		return nil, utils.NewHttpError("Server", http.StatusInternalServerError)
 	}
 
-	var resp []AllReviewsResponse
-	isEmpty := true
+	var resp []AllReviewsResponse = make([]AllReviewsResponse, 0)
 
 	for rows.Next() {
-		isEmpty = false
 		var rev = Review{}
 		var cust = Customer{}
 
@@ -500,16 +485,5 @@ func GetProductReviewsByProductId(productId string, w http.ResponseWriter) {
 		})
 	}
 
-	if isEmpty {
-		utils.SendJson(utils.ResUserWithData{
-			Msg:  "No reviews found",
-			Data: make([]any, 0),
-		}, http.StatusOK, w)
-		return
-	}
-
-	utils.SendJson(utils.ResUserWithData{
-		Msg:  "No reviews found",
-		Data: resp,
-	}, http.StatusOK, w)
+	return &resp, nil
 }
