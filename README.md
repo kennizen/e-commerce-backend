@@ -3,7 +3,7 @@
 This repository represents an online e-commerce platform backend system written in Go that is solely made to make frontend mockups and designs for generic use cases.  
 This repository does not contain complex APIs but simple CRUD APIs as a base.
 
-## Repository Features
+## Backend Features
 - Pre-seeded with 190+ product data 🛒.
 - User authentication with JWT 🔐.
 - Custom middleware for logging user requests 📰.
