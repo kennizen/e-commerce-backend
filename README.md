@@ -1,6 +1,6 @@
 # E-Commerce Backend API's (Dummy)
 
-This repository represents an online ecommerce platform backend system solely made for the purpose of making frontend mockups and designs for generic use cases.  
+This repository represents an online e-commerce platform backend system written in Go that is solely made to make frontend mockups and designs for generic use cases.  
 This repository does not contain complex APIs but simple CRUD APIs as a base.
 
 ## Repository Features
@@ -24,7 +24,7 @@ With that done, clone the repository into your local machine.
 ```bash
 git clone https://github.com/kennizen/e-commerce-backend.git
 ```
-The following are the ports used by the application so make sure nothing is already binded to them.
+The following are the ports used by the application so make sure nothing is already bound to them.
 
 #### Ports - 8080, 5433, 6600, 6601
 
@@ -40,7 +40,7 @@ Wait for docker to finish setup and you should see after all the logs that.
 
 🚀🚀🚀 Server started on host port 8080.
 
-If all the above steps were successfull then the database is created, product data is seeded into the database, all the necessary migrations are done and you are good to go.
+If all the above steps are successful then the database is created, product data is seeded into the database, all the necessary migrations are done and you are good to go.
 
 #### For API docs type the following into the browser's url.
 
@@ -63,4 +63,4 @@ You will be greeted with a login screen with username and password both of which
 
 Once you enter PgAdmin click on `Add New Server` then under `General` provide a name for your connection. Then move to `Connection` tab there `Host name/address` will be `postgres` as the database is running inside docker so this is the container's name. `Maintenance database` will be `ecommerce`. `Username` and `Password` will be `postgres`. Save the connection and you should be connected to the database inside docker. 
 
-So there you have it. Now you can start creating your beautiful frontend mockups for an ecommerce application.
+So there you have it. Now you can start creating your beautiful frontend mockups for an e-commerce application.
