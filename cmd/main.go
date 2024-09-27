@@ -20,7 +20,7 @@ func main() {
 
 	server := http.Server{
 		Addr:    ":" + os.Getenv("SERVER_PORT"),
-		Handler: middlewares.Logger(router),
+		Handler: middlewares.CORS(middlewares.Logger(router)),
 	}
 
 	fmt.Println("🚀🚀🚀 Server started on host port", os.Getenv("API_PORT"))
