@@ -17,7 +17,7 @@ import (
 type RegisterUserPayload struct {
 	Firstname  string `validate:"required"`
 	Middlename string
-	Lastname   string `validate:"required"`
+	Lastname   string
 	Age        int    `validate:"required,gte=1"`
 	Email      string `validate:"required,email"`
 	Password   string `validate:"required"`
