@@ -252,7 +252,7 @@ func AddProductReview(w http.ResponseWriter, r *http.Request) {
 
 	if valErr != nil {
 		fmt.Println("Invalid payload", valErr.Error())
-		utils.SendMsg("Invalid payload", http.StatusBadRequest, w)
+		utils.SendMsg(valErr.Error(), http.StatusBadRequest, w)
 		return
 	}
 
@@ -320,7 +320,7 @@ func UpdateProductReview(w http.ResponseWriter, r *http.Request) {
 
 	if valErr != nil {
 		fmt.Println("Invalid payload", valErr.Error())
-		utils.SendMsg("Invalid payload", http.StatusBadRequest, w)
+		utils.SendMsg(valErr.Error(), http.StatusBadRequest, w)
 		return
 	}
 
