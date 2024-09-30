@@ -18,8 +18,8 @@ type ProductReviewPayload struct {
 }
 
 type ProductsResponse struct {
-	Products   *[]models.Product
-	TotalCount int
+	Products   *[]models.Product `json:"products"`
+	TotalCount int               `json:"totalCount"`
 }
 
 // ---------------------------------------------------------------------------------------- //
